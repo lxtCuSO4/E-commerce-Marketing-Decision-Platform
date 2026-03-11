@@ -1,0 +1,36 @@
+-- "modulea"."kesplus_v_restful" source
+
+CREATE OR REPLACE VIEW "${moduleSchema}"."kesplus_v_restful"
+AS SELECT
+--     kt.id,
+--     kt.name as "title",
+--     kt.code,
+--     kt.pid,
+--     kt.obj_type,
+--     kt.tree_sort,
+--     kt.tree_path,
+    t.id,
+    t.title,
+    t.parent_id,
+    t.obj_type,
+    t.sort_num,
+    t.tree_sort,
+    t.path,
+    t.method,
+    t.return_type,
+    t.source_type,
+    t.auth_status,
+    t.remark,
+    t.full_path,
+    t.module_id,
+    t.func_id,
+    t.enabled,
+    t.api_version,
+    t.view_id,
+    t.service_code,
+    t.responsible_person,
+    t.sql_content,
+    t.anonymous_block,
+    t.params,
+    t.is_anonymous
+   FROM "${moduleSchema}".kesplus_module_restful t;

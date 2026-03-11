@@ -1,0 +1,38 @@
+{
+  "editor.formatOnType": false,
+  "editor.formatOnSave": false,
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.tabSize": 2,
+  "editor.formatOnPaste": false,
+  "editor.guides.bracketPairs": "active",
+  "files.autoSave": "off",
+  "git.confirmSync": false,
+  "workbench.startupEditor": "newUntitledFile",
+  "editor.suggestSelection": "first",
+  "editor.acceptSuggestionOnCommitCharacter": false,
+  "css.lint.propertyIgnoredDueToDisplay": "ignore",
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "on",
+    "strings": "on"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "never"
+  },
+  "workbench.editor.enablePreview": false,
+  "i18n-ally.localesPaths": ["src/locales"],
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.sortKeys": true,
+  "i18n-ally.namespace": true,
+  "i18n-ally.enabledParsers": ["yaml", "js"],
+  "i18n-ally.sourceLanguage": "en",
+  "i18n-ally.displayLanguage": "zh-CN",
+  "i18n-ally.enabledFrameworks": ["vue"],
+  "iconify.excludes": ["el"],
+  "typescript.tsdk": "node_modules/typescript/lib"
+}

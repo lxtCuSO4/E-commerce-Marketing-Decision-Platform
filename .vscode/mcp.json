@@ -1,0 +1,13 @@
+{
+    "servers": {
+        "kesplus-mcp-server": {
+            "type": "stdio",
+            "command": "node",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "./node_modules/@kesplus/mcp/dist/index.js"
+            ],
+        }
+    },
+    "inputs": []
+}

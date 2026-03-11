@@ -1,0 +1,676 @@
+@use "@@/plugin-layout/styles/index.scss" as *;
+@use "element-plus/theme-chalk/src/index.scss" as *;
+@use "element-plus/theme-chalk/src/table.scss" as *;
+@use "@kesplus/components/style.css" as *;
+
+
+/* Framework 框架区域*/
+//  css var 主题中的变量
+:root,
+:host {
+  --el-mask-color: transparent !important;
+  /*
+    @desc color-surface
+    @namespace style/common
+    @semantic 前景色
+   */
+  --color-transparent: transparent;
+  /*
+    @desc color-surface
+    @namespace style/common
+    @semantic 前景色
+   */
+  --color-surface: var(--el-bg-color);
+  /*
+    @desc color-lining
+    @namespace style/common
+    @semantic 衬色
+   */
+  --color-lining: var(--el-bg-color-page);
+
+  // =================== 大布局 ==============
+
+  /* page */
+  /*
+    @desc padding-lr
+    @namespace style/common
+    @semantic 页面左右内边距
+   */
+  --page-padding-lr: 12px;
+  /*
+    @desc padding-tb
+    @namespace style/common
+    @semantic 页面上下内边距
+   */
+  --page-padding-tb: 12px;
+
+  /*
+    @desc header-padding-height
+    @namespace size/header
+    @semantic header 页头高度
+   */
+  --page-header-height: 54px;
+  /*
+    @desc header-padding-lr
+    @namespace size/header
+    @semantic header 左右内边距
+   */
+  --page-header-padding-lr: var(--page-padding-lr);
+  /*
+    @desc header-padding-tb
+    @namespace size/header
+    @semantic header 上下内边距
+   */
+  --page-header-padding-top: var(--page-padding-tb);
+  /*
+    @desc header-padding-tb
+    @namespace size/header
+    @semantic header 底部内边距
+   */
+  --page-header-padding-bottom: var(--page-block-padding-tb);
+
+  /*
+    @desc header-dividing-line-color
+    @namespace style/header
+    @semantic header 分割线颜色
+   */
+  --page-header-divider-color: var(--el-border-color);
+
+  /*
+    @desc footer-padding-lr
+    @namespace size/footer
+    @semantic footer左右内边距
+   */
+  --page-footer-padding-lr: var(--page-padding-lr);
+  /*
+    @desc footer-padding-tb
+    @namespace size/footer
+    @semantic footer上下内边距
+   */
+  --page-footer-padding-bottom: var(--page-padding-tb);
+  /*
+    @desc footer-padding-top
+    @namespace size/footer
+    @semantic footer顶部内边距
+   */
+  --page-footer-padding-top: var(--page-block-padding-tb);
+
+  /*
+    @desc block-corner
+    @namespace size/block
+    @semantic 区块圆角尺寸
+   */
+  --page-block-corner: var(--el-border-radius-base);
+  /*
+    @desc block-padding-lr
+    @namespace size/block
+    @semantic 区块左右内边距
+   */
+  --page-block-padding-lr: 10px;
+  /*
+    @desc block-padding-tb
+    @namespace size/block
+    @semantic 区块上下内边距
+   */
+  --page-block-padding-tb: 10px;
+  /**
+    @desc block-padding-content
+    @namespace size/block
+    @semantic 区块标题与内容部分的间距
+   */
+  --page-block-padding-content: var(--page-block-padding-tb);
+
+  /*
+   @desc section-title-font-color
+   @namespace style/section
+   @semantic 章节标题颜色
+  */
+  --page-section-title-font-color: var(--el-text-color-primary);
+  /*
+    @desc section-extra-font-color
+    @namespace style/section
+    @semantic 章节附加内容文本颜色
+   */
+  --page-section-extra-font-color: var(--el-text-color-placeholder);
+
+  /*
+    @desc block-title-font-color
+    @namespace style/block
+    @semantic 区块标题颜色
+   */
+  --page-block-title-font-color: var(--el-text-color-primary);
+  /*
+    @desc block-extra-font-color
+    @namespace style/block
+    @semantic 区块附加内容文本颜色
+   */
+  --page-block-extra-font-color: var(--el-text-color-placeholder);
+
+  /*
+    @desc section-gap
+    @namespace size/gap
+    @semantic 章间隙
+  */
+  --page-section-gap: 0.65rem;
+  /*
+   @desc block-gap
+   @namespace size/gap
+   @semantic 区块间隙
+  */
+  --page-block-gap: 0.5rem;
+  /*
+   @desc block-border-width
+   @namespace style/block
+   @semantic 区块边框宽度
+  */
+  --page-block-border-width: var(--el-border-width);
+  /*
+   @desc block-border-color
+   @namespace style/block
+   @semantic 区块边框颜色
+  */
+  --page-block-border-color: var(--el-border-color);
+
+  //  =================== 小布局 ==============
+
+  /*
+    @desc grid-gap
+    @namespace size/gap
+    @semantic 小布局间隙
+   */
+  --page-grid-gap: 0.25rem;
+
+  /*
+   * 段落元素的左右间距
+   */
+  --page-p-small-spacing: 0.125rem;
+  --page-p-medium-spacing: 0.25rem;
+  --page-p-large-spacing: 0.5rem;
+  /*
+   * 段落元素的上下间距
+   */
+  --page-p-el-margin: 0.125rem;
+  /*
+    @desc p-font-color
+    @namespace style/p
+    @semantic 段落默认字体色
+   */
+  --page-p-font-color: var(--el-text-color-regular);
+
+  /*
+    @desc small-space-size
+    @namespace size/space
+    @semantic 默认小号间距尺寸
+  */
+  --page-space-small-size: 0.25rem;
+  /*
+    @desc medium-space-size
+    @namespace size/space
+    @semantic 默认中号间距尺寸
+  */
+  --page-space-medium-size: 0.5rem;
+  /*
+    @desc large-space-size
+    @namespace size/space
+    @semantic 默认大号间距尺寸
+  */
+  --page-space-large-size: 0.625rem;
+  /**
+    预置字颜色
+   */
+  --page-h1-font-color: var(--el-text-color-primary);
+  --page-h2-font-color: var(--el-text-color-primary);
+  --page-h3-font-color: var(--el-text-color-primary);
+  --page-h4-font-color: var(--el-text-color-primary);
+  --page-h5-font-color: var(--el-text-color-primary);
+  --page-h6-font-color: var(--el-text-color-primary);
+  --page-body1-font-color: var(--el-text-color-regular);
+  --page-body2-font-color: var(--el-text-color-regular);
+  --page-caption-font-color: var(--el-text-color-placeholder);
+  --page-overline-font-color: var(--el-border-color);
+
+  --dialog-form-tab-height: 50px;
+}
+
+.layout-container {
+  --page-header-height: 54px;
+  --layout-aside-pc-220: 201px;
+  --layout-aside-pc-64: 61px;
+  --page-header-primary-color: var(--el-color-primary);
+  --page-header-primary-color-darker-3: var(--el-color-primary);
+  --page-header-primary-color-darker-5: var(--el-color-primary-dark-2);
+  --page-header-text-color: var(--el-color-white);
+  --page-header-text-color-lighter: var(--el-color-white);
+  --page-menu-bg-color: var(--el-bg-color);
+  --page-border-color: var(--el-border-color);
+  --page-border-color-lighter: var(--el-disabled-border-color);
+}
+
+// #region header区域样式修改
+// #region menu
+.layout-aside {
+
+  overflow-x: hidden;
+  background-color: var(--page-header-primary-color);
+
+  .layout-toggler {
+    background-color: var(--page-menu-bg-color);
+    height: var(--page-layout-toggler-height, 40px);
+    border-top: 1px solid var(--page-border-color, #eaeaf3);
+    border-right: 1px solid var(--page-border-color, #eaeaf3);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    cursor: pointer;
+    padding-right: var(--page-layout-toggler-padding, 20px);
+    font-size: var(--page-layout-toggler-size, 20px);
+    color: var(--page-layout-toggler-color, var(--color-text-4, #56698a));
+  }
+
+  .aside {
+    box-sizing: border-box;
+    background-color: var(--page-menu-bg-color);
+    border-right: 1px solid var(--page-border-color);
+
+    .el-scrollbar__view {
+      padding-top: 14px;
+      overflow-x: hidden;
+    }
+
+    .el-menu {
+      border-right: 0px;
+      --el-menu-item-height: 40px;
+      --el-menu-hover-bg-color: var(--el-color-primary-light-7) !important;
+      --el-menu-active-bg-color: var(--el-color-primary-light-9) !important;
+      --el-menu-base-level-padding: var(--page-block-padding-tb);
+
+      // --el-menu-hover-bg-color: var(--el-color-warning-light-8)
+      .el-menu-item,
+      .el-sub-menu {
+        color: var(--el-text-color-regular);
+        font-weight: 500;
+        margin: var(--page-block-padding-tb) 0;
+
+        .el-icon {
+          --el-menu-icon-width: 20px;
+          margin-left: var(--page-block-padding-tb);
+          margin-right: calc(var(--page-block-padding-tb) / 2);
+          font-size: var(--el-font-size-medium);
+        }
+
+        .el-sub-menu__icon-arrow {
+          --el-menu-base-level-padding: var(--page-block-padding-tb);
+          top: unset;
+          color: var(--el-menu-text-color) !important;
+          width: var(--el-menu-icon-width);
+          height: var(--el-menu-icon-width);
+          margin-top: 0;
+        }
+
+        // 嵌套的
+        .el-menu-item,
+        .el-sub-menu {
+          --el-menu-base-level-padding: calc(var(--page-block-padding-tb) + 14px);
+
+          .el-icon {
+            display: none;
+          }
+
+          .el-sub-menu__icon-arrow {
+            display: inline;
+          }
+        }
+      }
+
+      .el-sub-menu {
+        &:first-of-type {
+          .el-icon {
+            color: rgb(211, 151, 60);
+          }
+        }
+
+        &:nth-of-type(2) {
+          .el-icon {
+            color: rgb(205, 207, 43);
+          }
+        }
+
+        &:nth-of-type(3) {
+          .el-icon {
+            color: rgb(136, 207, 43);
+          }
+        }
+
+        &:nth-of-type(4) {
+          .el-icon {
+            color: rgb(43, 207, 84);
+          }
+        }
+
+        &:nth-of-type(5) {
+          .el-icon {
+            color: rgb(43, 188, 207);
+          }
+        }
+
+        &:nth-of-type(6) {
+          .el-icon {
+            color: rgb(43, 95, 207);
+          }
+        }
+
+        &:nth-of-type(7) {
+          .el-icon {
+            color: rgb(128, 43, 207);
+          }
+        }
+
+        &:nth-of-type(8) {
+          .el-icon {
+            color: rgb(207, 43, 193);
+          }
+        }
+
+        &:nth-of-type(9) {
+          .el-icon {
+            color: rgb(207, 43, 111);
+          }
+        }
+
+        &:nth-of-type(10) {
+          .el-icon {
+            color: rgb(207, 62, 43);
+          }
+        }
+
+        &:nth-of-type(11) {
+          .el-icon {
+            color: rgb(163, 207, 43);
+          }
+        }
+
+        &:nth-of-type(12) {
+          .el-icon {
+            color: rgb(57, 207, 43);
+          }
+        }
+
+        &:nth-of-type(13) {
+          .el-icon {
+            color: rgb(207, 131, 43);
+          }
+        }
+
+        &:nth-of-type(14) {
+          .el-icon {
+            color: rgb(117, 207, 43);
+          }
+        }
+      }
+
+      .el-menu-item {
+        &.is-active {
+          background: var(--el-menu-active-bg-color);
+          color: var(--page-header-primary-color, #c8161d);
+          font-weight: 600;
+
+          &::before {
+            background: var(--page-header-primary-color, #c8161d);
+            content: " ";
+            border-radius: 0px 4px 4px 0px;
+            width: 4px;
+            box-sizing: border-box;
+            height: 80%;
+            position: absolute;
+            left: 0px;
+          }
+        }
+
+        &:first-of-type {
+          .el-icon {
+            color: rgb(211, 151, 60);
+          }
+        }
+
+        &:nth-of-type(2) {
+          .el-icon {
+            color: rgb(205, 207, 43);
+          }
+        }
+
+        &:nth-of-type(3) {
+          .el-icon {
+            color: rgb(136, 207, 43);
+          }
+        }
+
+        &:nth-of-type(4) {
+          .el-icon {
+            color: rgb(43, 207, 84);
+          }
+        }
+
+        &:nth-of-type(5) {
+          .el-icon {
+            color: rgb(43, 188, 207);
+          }
+        }
+
+        &:nth-of-type(6) {
+          .el-icon {
+            color: rgb(43, 95, 207);
+          }
+        }
+
+        &:nth-of-type(7) {
+          .el-icon {
+            color: rgb(128, 43, 207);
+          }
+        }
+
+        &:nth-of-type(8) {
+          .el-icon {
+            color: rgb(207, 43, 193);
+          }
+        }
+
+        &:nth-of-type(9) {
+          .el-icon {
+            color: rgb(207, 43, 111);
+          }
+        }
+
+        &:nth-of-type(10) {
+          .el-icon {
+            color: rgb(207, 62, 43);
+          }
+        }
+
+        &:nth-of-type(11) {
+          .el-icon {
+            color: rgb(163, 207, 43);
+          }
+        }
+
+        &:nth-of-type(12) {
+          .el-icon {
+            color: rgb(57, 207, 43);
+          }
+        }
+
+        &:nth-of-type(13) {
+          .el-icon {
+            color: rgb(207, 131, 43);
+          }
+        }
+
+        &:nth-of-type(14) {
+          .el-icon {
+            color: rgb(117, 207, 43);
+          }
+        }
+      }
+    }
+
+    // #endregion
+  }
+}
+
+
+// #endregion
+
+// #region 表单样式
+// element-plus 颜色样式修改
+@mixin element-plus-in-form {
+  .el-form-item {
+    &.is-required {
+
+      .el-select__wrapper,
+      .el-input,
+      .el-textarea {
+        --el-input-border-color: var(--el-color-warning-light-3);
+        --el-input-hover-border-color: var(--el-color-warning);
+        --el-border-color: var(--el-color-warning-light-3);
+        --el-border-color-hover: var(--el-color-warning);
+      }
+
+      .el-tag.el-tag--primary {
+        --el-border-color: var(--el-border-color-light);
+      }
+
+      // form-item嵌套的情况如果不是必填就不加颜色
+      .el-form-item:not(.is-required) {
+
+        .el-select__wrapper,
+        .el-input,
+        .el-textarea {
+          --el-input-border-color: var(--el-border-color);
+          --el-input-hover-border-color: var(--el-border-color-hover);
+          --el-border-color: #dcdfe6;
+          --el-border-color-hover: #d4d7de;
+        }
+      }
+    }
+
+    &.is-error {
+
+      .el-select__wrapper,
+      .el-input,
+      .el-textarea {
+        --el-input-border-color: var(--el-color-danger-light-3);
+        --el-border-color-hover: var(--el-color-danger);
+        --el-input-hover-border-color: var(--el-color-danger);
+        --el-border-color: var(--el-color-danger-light-3);
+      }
+
+      .el-tag.el-tag--primary {
+        --el-border-color: var(--el-border-danger-light);
+      }
+
+      // form-item嵌套的情况如果不是报错就不加颜色
+      .el-form-item:not(.is-error) {
+
+        .el-select__wrapper,
+        .el-input,
+        .el-textarea {
+          --el-input-border-color: var(--el-border-color);
+          --el-input-hover-border-color: var(--el-border-color-hover);
+          --el-border-color: #dcdfe6;
+          --el-border-color-hover: #d4d7de;
+        }
+      }
+    }
+  }
+}
+
+.kesplus-dialog,
+.kesplus-drawer {
+  @include element-plus-in-form;
+
+  --kesplus-page-content-height: calc(var(--kesplus-dialog-max-height, 67vh) - 45px - 50px - 2 * var(--page-padding-tb) - 36px);
+  --dialog-form-tab-height: calc(var(--kesplus-dialog-max-height, 67vh) - 45px - 50px - 2 * var(--page-padding-tb));
+  --page-grid-gap: calc(var(--el-font-size-extra-small) + 3px);
+
+
+  .k-dialog-body {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 0px;
+
+    .k-design-col-flex,
+    .k-design-row-flex,
+    .k-design-cell {
+      &:empty {
+        display: none !important;
+      }
+    }
+  }
+
+  .el-drawer__footer,
+  .buttonPane .el-affix .buttonPaneDiv {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 65px;
+    box-shadow: var(--el-box-shadow-light);
+    padding: var(--page-padding-tb) var(--page-padding-lr);
+    padding-right: calc(var(--page-padding-lr) * 2);
+
+    // k-dialog-body-footer buttonpane
+    &>div {
+      display: flex;
+      flex-direction: row-reverse;
+      align-items: center;
+    }
+  }
+}
+
+// 表单内样式调整
+#kesplus-form-content {
+  @include element-plus-in-form;
+}
+
+// 页面表格显示
+.k-design-block {
+
+  // 头提供10px
+  .k-design-block-head {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    box-sizing: content-box;
+    background: transparent;
+    border: none !important;
+
+    span.k-design-text-h6 {
+      position: relative;
+      font-weight: 500;
+      font-size: var(--el-font-size-large);
+      line-height: 1em;
+      color: var(--k-block-head-color-primary, var(--el-color-primary, #c8161d));
+      padding: var(--page-block-padding-tb) var(--page-block-padding-lr) var(--page-block-padding-tb) calc(1.5 * var(--page-block-padding-tb));
+      color: var(--el-text-color-primary);
+      border-bottom: none;
+
+      &::before {
+        position: absolute;
+        display: inline-block;
+        box-sizing: border-box;
+        border-radius: var(--el-border-radius-base);
+        left: calc(var(--page-block-padding-tb) / 2);
+        z-index: 1;
+        height: 1em;
+        border: 2px solid var(--k-block-head-color-primary, var(--el-color-primary, #c8161d)) !important;
+      }
+    }
+  }
+
+  // 内容提供10像素
+  .k-design-block-content {
+    padding-top: var(--k-block-padding-tb, 10px);
+    padding-left: var(--k-block-padding-lr, 0);
+    padding-right: var(--k-block-padding-lr, 0);
+    padding-bottom: var(--k-block-padding-tb, 0);
+  }
+}
+// #endregion

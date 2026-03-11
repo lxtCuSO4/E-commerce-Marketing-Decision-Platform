@@ -1,0 +1,2 @@
+    INSERT INTO kesplus_base.kesplus_user_role ("id","user_id","role_id","role_name","current_dept_id","role_code","create_by","create_time","update_by","update_time","dept_id","relate_type") VALUES
+	 ('bdcf6bd5a6094a1c8367c1b8bb5a265b','#admin#','0875c9f8633f46eca03cd86ae46c7dd3','流程管理员','1','bpmn_manager',NULL,SYSDATE,NULL,SYSDATE,NULL,0);

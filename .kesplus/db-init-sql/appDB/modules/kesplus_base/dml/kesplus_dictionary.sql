@@ -1,0 +1,21 @@
+INSERT INTO kesplus_base.kesplus_dictionary ("id","code","dictionary_id","name","description","val","pid","module_id","sort","filters","enabled","val_type","create_by","create_time","update_by","update_time","dept_id","dictionary_level") VALUES
+	 ('df768c9462134ca8a5fcb4d13ea16335','jobType','df768c9462134ca8a5fcb4d13ea16335','岗位类型','岗位类型，分为工勤岗位、专技岗位、管理岗位',NULL,'0','0',5,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',0),
+	 ('212fdfcf9314411691f7607a6c939fc5','jobType','df768c9462134ca8a5fcb4d13ea16335','工勤岗位',NULL,'working','df768c9462134ca8a5fcb4d13ea16335','0',1,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',1),
+	 ('9cfc9b2dfbb944e4bf9f9c7c725fd13f','jobType','df768c9462134ca8a5fcb4d13ea16335','管理岗位',NULL,'manage','df768c9462134ca8a5fcb4d13ea16335','0',3,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',1),
+	 ('cbebf86c6ea34b6581d626f74e886d8e','jobType','df768c9462134ca8a5fcb4d13ea16335','专技岗位',NULL,'technical','df768c9462134ca8a5fcb4d13ea16335','0',2,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',1);
+
+
+INSERT INTO kesplus_base.kesplus_dictionary ("id","code","dictionary_id","name","description","val","pid","module_id","sort","filters","enabled","val_type","create_by","create_time","update_by","update_time","dept_id","dictionary_level") VALUES
+	 ('df27c3f9c9eb4cfdb598f0c6179e6147','routeGroup','df27c3f9c9eb4cfdb598f0c6179e6147','路由分组',NULL,NULL,'0','0',8,NULL,1,'varchar','36468b9c8759468098e33c0d9843b9ae',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',0),
+	 ('2c5f0ab75e944da7965404c45586a2c1','routeGroup','df27c3f9c9eb4cfdb598f0c6179e6147','开发环境',NULL,'开发环境','df27c3f9c9eb4cfdb598f0c6179e6147','0',1,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',1),
+	 ('d8676f17488c46bcb66c3997ad9f8017','routeGroup','df27c3f9c9eb4cfdb598f0c6179e6147','测试环境',NULL,'测试环境','df27c3f9c9eb4cfdb598f0c6179e6147','0',2,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',1),
+	 ('e6f7611a76de40668e3e24ef40267d42','routeGroup','df27c3f9c9eb4cfdb598f0c6179e6147','生产环境',NULL,'生产环境','df27c3f9c9eb4cfdb598f0c6179e6147','0',3,NULL,1,'varchar','55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'55c7f09a7aea4db98cbb40bbb4447b96',SYSDATE,'0',1);
+
+
+INSERT INTO kesplus_base.kesplus_dictionary ("id","code","dictionary_id","name","description","val","pid","module_id","sort","dictionary_level","filters","enabled","val_type","create_by","create_time","update_by","update_time","dept_id") VALUES
+	 ('57942d79b53241e3a44e84684af188de','message_category','57942d79b53241e3a44e84684af188de','消息类型','消息系统类型',NULL,'0',NULL,0,0,NULL,1,'varchar','eef7e37918c449feadcf69368e0ef409',SYSDATE,NULL,SYSDATE,'1'),
+	 ('2069fbdd8a984b51b050d3bb5caeea46','message_category','57942d79b53241e3a44e84684af188de','系统消息',NULL,'system','57942d79b53241e3a44e84684af188de',NULL,2,1,NULL,1,'varchar','eef7e37918c449feadcf69368e0ef409',SYSDATE,'eef7e37918c449feadcf69368e0ef409',SYSDATE,'1'),
+	 ('5e8c62eb69144584b617c8f50f30e16b','message_category','57942d79b53241e3a44e84684af188de','告警消息',NULL,'warning','57942d79b53241e3a44e84684af188de',NULL,1,1,NULL,1,'varchar','eef7e37918c449feadcf69368e0ef409',SYSDATE,'eef7e37918c449feadcf69368e0ef409',SYSDATE,'1'),
+	 ('32384bcc698a4f01810f4701f4e027f0','message_category','57942d79b53241e3a44e84684af188de','待办消息',NULL,'todo','57942d79b53241e3a44e84684af188de',NULL,3,1,NULL,1,'varchar','eef7e37918c449feadcf69368e0ef409',SYSDATE,NULL,SYSDATE,'1'),
+	 ('4a839655d6e14e49adc7b160d164887d','message_category','57942d79b53241e3a44e84684af188de','业务消息',NULL,'business','57942d79b53241e3a44e84684af188de',NULL,4,1,NULL,1,'varchar','eef7e37918c449feadcf69368e0ef409',SYSDATE,'eef7e37918c449feadcf69368e0ef409',SYSDATE,'1'),
+	 ('0ed1d190597e4da8bf553107f6be79b8','message_category','57942d79b53241e3a44e84684af188de','个人消息',NULL,'person','57942d79b53241e3a44e84684af188de',NULL,5,1,NULL,1,'varchar','eef7e37918c449feadcf69368e0ef409',SYSDATE,'eef7e37918c449feadcf69368e0ef409',SYSDATE,'1');

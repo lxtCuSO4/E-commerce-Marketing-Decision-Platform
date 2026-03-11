@@ -1,0 +1,17 @@
+CREATE OR REPLACE FUNCTION public.pgjwt_verify(token_value text, secret text)
+ RETURNS TABLE(header json, payload json, valid boolean)
+AS WRAPPED
+wulH1FokmP2ueJjF5pxdhxvGPnSRNZSSiPQ4ZOWXkOqcH02CSGoQDA1sL1zM
+RroWYijjk7zDd+tqKQdvbD43ccJG0vEs7en0BQgS9+v20ARAJOhNUOkSLSBw
+i3pCqSePNFZ5o1tFiNr0AVTrx795l4nJtnZvmSxJiCvrr0hfyNswbbg5oGX/
+sGBJOLjKkwaYq82miLBxFgwMYiKAM278b8COqsIU5y7Wcqt8l4VihBI2dyHk
+ZXjf2GXv2qd5pWTDpeGdYCf/klTt/3REI36BE4xf/73Kkg/YNeoRNYpkKP/1
+xgWEh1gm9V30ANBB3gSWvrC12PBlam43l25rTbC7WGL74RwV6nyhp9jfCJPz
+FfZcKzcxCGcPHt4tuRX9yP9YOzOM49LcFpir3/Nud8NItigqnawgDp+5uygg
+pBVbH2nbTLJS4c9I39CLdvdU6+Adb+KtS2XvJjaXmvdDWLi1DoD7jqgtfKck
+eqok4/vZUDMqrsM8xRXlm6BIXO/ivI/YAJWotAnXhwtQ8lz3ztD2+qHvrE2g
+zRpyP1TV7Q98901KE9p2d46Tc9vi14LpJfsROGJr/TzqaFhaO6/gqR79qyKC
+1TJRXFjqlPGq/VJ0lGitZOXM6ia0cA+lNcijNvcdadKxSo7HP3P3ruiBhJPz
+UA==
+END;
+

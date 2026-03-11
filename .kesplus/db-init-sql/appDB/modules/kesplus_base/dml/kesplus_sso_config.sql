@@ -1,0 +1,3 @@
+-- INSERT INTO kesplus_base.kesplus_sso_config ("id","name","code","enabled","schema_name","pkg_name","func_name","type","sso_index","private_key","public_key","remark","create_by","update_by","update_time","create_time","dept_id") VALUES
+-- 	 ('2','DEMO','demo',1,'kesplus_base','kesplus_pkg_sso_functions','base64_encrypt_to',1,NULL,NULL,NULL,'测试平台，可使用用户编号和部门编号单点登录应用，生产环境请停用或删除此配置','0',NULL,NULL,SYSDATE,'0'),
+-- 	 ('1','DEMO','demo',1,'kesplus_base','kesplus_pkg_sso_functions','base64_decrypt_from',0,NULL,NULL,NULL,'测试平台，可使用用户编号和部门编号单点登录应用，生产环境请停用或删除此配置','0',NULL,NULL,SYSDATE,'0');

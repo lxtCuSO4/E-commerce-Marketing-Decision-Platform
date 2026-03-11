@@ -1,0 +1,48 @@
+-- "kesplus_app"."kesplus_v_restful_simple" source
+
+CREATE OR REPLACE VIEW "kesplus_app"."kesplus_v_restful_simple"
+AS SELECT sa.id,
+    sa.code,
+    sa.path,
+    sa.title,
+    sa.return_type,
+    sa.source_type,
+    sa.sys_api,
+    sa.service_code,
+    sa.method,
+    sa.enabled,
+    sa.responsible_person,
+    sa.api_version,
+    sa.sql_content,
+    sa.anonymous_block,
+    '1'::text AS belongs,
+    sa.params,
+    sa.module_id,
+    sa.is_anonymous,
+    sa.execute_content,
+    sa.sql_content_simple,
+    sa.env
+   FROM kesplus_app.kesplus_sys_restful sa
+UNION
+ SELECT sa.id,
+    sa.code,
+    sa.path,
+    sa.title,
+    sa.return_type,
+    sa.source_type,
+    sa.sys_api,
+    sa.service_code,
+    sa.method,
+    sa.enabled,
+    sa.responsible_person,
+    sa.api_version,
+    sa.sql_content,
+    sa.anonymous_block,
+    '0'::text AS belongs,
+    sa.params,
+    sa.module_id,
+    sa.is_anonymous,
+    sa.execute_content,
+    sa.sql_content_simple,
+    sa.env
+   FROM kesplus_platform.kesplus_sys_restful sa;

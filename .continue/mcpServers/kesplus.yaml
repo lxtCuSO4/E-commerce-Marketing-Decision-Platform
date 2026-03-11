@@ -1,0 +1,9 @@
+name: KESPlus MCP server
+version: 1.0.0
+schema: v1
+mcpServers:
+  - name: KESPlus MCP server
+    type: stdio
+    command: node
+    args:  
+      - node_modules/@kesplus/mcp/dist/index.js

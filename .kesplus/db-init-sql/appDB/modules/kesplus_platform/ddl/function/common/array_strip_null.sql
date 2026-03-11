@@ -1,0 +1,11 @@
+CREATE OR REPLACE FUNCTION "kesplus_platform".array_strip_null(a anyarray)
+ RETURNS anyarray
+AS WRAPPED
+UyGxcoZpgm/ICi5pO6/emU1udfTYs6B6eohlidDOTGshI7vWO+Cj1fcXjQCK
+BikaC4Y/oY7GBV1oUJCdWy5q+Hd8zUIEu8A52jXJRWwinUnLg4dztH/6vhEn
+XZGVMhxzm1COBj6er9m+AiYqHN2FDSPD1Y4IL6C4dge9SjPB+yt6+r010NrK
+x4j0rvQz5aGr8IurUOZTGxLrXq1uau3WbFJg0NdTvp3q5DbZvJ9lB3tY2TZo
+69T7r5/KL4koPlFktU87oo95njZfqAM0WS8anNJ81ZB04UbWnbFlf73Yvxpv
+BdAz+0H0nM4XHmrRvlMl
+END;
+

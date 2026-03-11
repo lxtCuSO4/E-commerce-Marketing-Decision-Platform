@@ -1,0 +1,2 @@
+CREATE DOMAIN PUBLIC.fn AS text;
+	--COLLATE default;

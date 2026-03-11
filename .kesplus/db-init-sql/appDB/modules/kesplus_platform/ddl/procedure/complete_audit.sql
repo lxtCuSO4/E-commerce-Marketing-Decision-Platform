@@ -1,0 +1,7 @@
+CREATE OR REPLACE PROCEDURE kesplus_platform.complete_audit(request INOUT jsonb, response INOUT jsonb)
+AS WRAPPED
+lgabnDtLP0SOxgx26CS8t3KQIA+ycZ/iK67mAYnkphAD2pyy9yFEq3BCWqLC
+Pogo5utAt1+3gv69WJrEV9C7yH5xgPgQDkRdiS50ZB8fUDzV0S31c3amnZbR
+nYDla68cUVzRZvRxtrm7srRWbYtEqA==
+END;
+

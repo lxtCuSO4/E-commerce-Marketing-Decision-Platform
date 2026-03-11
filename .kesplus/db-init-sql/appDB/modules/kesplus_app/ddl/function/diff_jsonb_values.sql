@@ -1,0 +1,14 @@
+CREATE OR REPLACE FUNCTION "kesplus_app"."diff_jsonb_values"(json1 jsonb,json2 jsonb) RETURNS jsonb AS $$ WRAPPED
++kQI9WVMR9izcNOpiUmeeXuKbBuUj3R3H+gZOovcur6/h5uuXGaXaxqYDEYY
+MM7kYIYzKC5jAOY6vy1vvKvD+REvp62BcKfMH+yooQjdo95moUh1XBIVoWvj
+KQ9Nm6mCp1q8rFAosgA43cXqvE0FFEEidhdZxJ3WUPJ0DdHEoXGaPua+9scY
+xDHi99dIE7kSsSE7LLiVphTgvmeDT0oQHZhKKqqHPF4UgDvvTsNTAV1mkNff
+OSOBoaVa6gmSwGGRdiiOUs/TB3CAzXJ9HntSayIYyAdBP84ZZVpTj8qdWmFk
+V/o6HGW7CpaxP5GDf6PHMeeDE69/qqw/Zbj1Wod5jtNcmocc+eQW7GnK/6Kj
+Ev/7aS3blbrNUYNeOUqrfybs0uAPMss+drbx+tA/uuDlCZEyEmXFrbkLGJAl
+11Yv50TfM5oxn9sNQJsOWJLFaQxc0FXivQ+Yyq1lfCjk7soVN9AWxZLPE7nY
+BdVkGWLLEmgAZrLmFYHmWysWf+sNiQMHXGuNEbyoX47zFopsWczAzdzagbvd
+ZV3eDPMwjpbYH+YH4+EbkCu2ZOsPgD2dQJYjyZEAMqsrJJqTeAgsCOGxifZt
+z7JByPn91a4pQahdzcs=
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;

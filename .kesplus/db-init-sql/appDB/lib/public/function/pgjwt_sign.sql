@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION public.pgjwt_sign(token_json json, secret text)
+ RETURNS text
+AS WRAPPED
+rTsBP6bk85JM+cqnFded8XVm3tn9jHmfy7NlaEtmPI+WaD9XgC5r3r04uGIY
+n862F5R2vZ4C3ypmqekDok/6QjNBFbZD7ryCQ1iKjSKULZ/i4EvskOAjbv2t
+3AGm4KqorVsT1hKQa45fxK7gbSdoejnU1FUPpluYNo1y/4Kq7iS6AfpUm8xw
+jNysPx2bYHTjGuk6LIjfL8Ei29mkyQQGaLwtFRa7axWEm39XZpl7wlAO+Cwj
+XURXoJz6LH8ca9lp8T7RiIu/fny5dvpZcZ6GzQiWE8mCGKMYCNaSQyPPDO5m
+7cVWL6sL81KrJa0XU8Zc3/gBqSSHyShm1qoiI1upQpa0mGbfiis0SSrfCLDK
++noX6Yxq6oZIhyYnDRfKTLE/Gpcj6bUFeIkkq5ELCif8gA==
+END;
+

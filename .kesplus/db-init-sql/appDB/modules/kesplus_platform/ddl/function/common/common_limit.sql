@@ -1,0 +1,15 @@
+CREATE OR REPLACE FUNCTION "kesplus_platform".common_limit(pageSize integer)
+    RETURNS integer
+AS WRAPPED
+glovY5P6YTOOfDsBV2PC9cAE1sxchFITaTlp7WHdFqQ9ukpBLw+xsjh0Iiup
+lmwmBfCcxREwWRsSqXrlZQqe3HAt8UIWNgkIKrWQITq1J25nFuPrEKodO4kb
+98p317bxHeG3/sgP/CXk1DaEi5hWDm0U6aSfPTd55SGBQ1zbn6HL1W/C/XuD
+1G+j+jeES5N5hbqD8ocYFL7JNpa1jt0hu1W5g+k3SvknYLwa+ba985Guj9D4
+TPrYiw/gfBnLeHkReuUsHrgCzfubWouN2aEqschyeNbCg476Aga2Gr+QGr8W
+dYTVNSvgvB9uw+FBUh/on2p7J23Bv+lwkLngAIj6vPiVv82GrvZiOH6TFwAG
+2odl1boCp8lbrjVusJqPFuucs3Y3o9/pZBkcsx8FwvLe8a1aKaVbPB+1azKX
+Hrm0VsaTGJReK8DeOKOvsG7o1Tzh1nW1aVvXNpaikeYnJfO4sNaig9Jq4A+z
+XZk9qU9283itWimlWzwftWsylx65tFbG+SXWwjGcvVIaNgPd+pvVnbdK4ydf
+Oh84InOiTm+AtsM=
+END;
+

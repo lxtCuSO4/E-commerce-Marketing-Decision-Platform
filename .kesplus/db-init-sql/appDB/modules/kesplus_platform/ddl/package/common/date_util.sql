@@ -1,0 +1,142 @@
+CREATE OR REPLACE PACKAGE "kesplus_platform"."date_util" AUTHID CURRENT_USER AS
+    /**
+     * @Description 获得时间差秒数
+     * @param begin_time 开始时间
+     * @param end_time 结束时间
+     * @Return int
+     */
+    function getSeconds(begin_time timestamp without time zone, end_time timestamp without time zone) returns int;
+    /**
+     * @Description 获得时间差秒数
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return int
+     */
+    FUNCTION DIFF_SECOND(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN INT;
+    /**
+     * @Description 获得时间差分钟数
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return int
+     */
+    FUNCTION DIFF_MINUTE(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN INT;
+    /**
+     * @Description 获得时间差小时数
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return int
+     */
+    FUNCTION DIFF_HOUR(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN INT;
+    /**
+     * @Description 获得时间差天数
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return int
+     */
+    FUNCTION DIFF_DAY(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN INT;
+    /**
+     * @Description 获得时间差动态单位（天、时、分、秒自动进位）
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return int
+     */
+    FUNCTION DIFF_TIME(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN TEXT;
+    /**
+     * @Description 获得时间差INTERVAL时间格式(1 day 12:30:22)
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return TEXT
+     */
+    FUNCTION DIFF_INTERVAL(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN TEXT;
+    /**
+     * @Description 获得时间差INTERVAL时间格式带单位(1 day 12 hour 30 minute 22 second)
+     * @param AFTER_TIME 结束时间
+     * @param BEFORE_TIME 开始时间
+     * @Return TEXT
+     */
+    FUNCTION DIFF_INTERVAL_UNIT(AFTER_TIME DATE,BEFORE_TIME DATE) RETURN TEXT;
+end;
+
+CREATE OR REPLACE PACKAGE BODY "kesplus_platform"."date_util" AS WRAPPED
+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
+3E3L/HNmyzKoAGpr2g==
+END;
+

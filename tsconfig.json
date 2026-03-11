@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "jsx": "preserve",
+    "lib": ["esnext", "dom"],
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@@/*": ["./src/.kesplus/*"]
+    },
+    "allowJs": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "build/dist",
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsxImportSource": "vue",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "useDefineForClassFields": true
+  },
+  "include": [
+    "auto-imports.d.ts",
+    "components.d.ts",
+    "src/**/*",
+    "uno.config.ts",
+    ".kesplus.js",
+    ".kesplus.*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "scripts",
+    "src/.kesplus/*",
+    "jest"
+  ]
+}

@@ -1,0 +1,4 @@
+INSERT INTO "kesplus_platform"."kesplus_sys_aspect" ("id","aspect_code","aspect_name","order_id","fun_before","fun_after","fun_exception","url_pattern","create_by","create_time","update_by","update_time","aspect_type","aspect_version","aspect_status","check_type","is_deleted") VALUES
+	 ('1','CONSTRUCT_RESPONSE','切面-所有url',-9999,NULL,'"kesplus_platform"."router_common".constructResponseBody(request,response)',NULL,'/**',NULL,NULL,NULL,NULL,'0','1.0.0','1','0',0),
+	 ('2','CHECK_PERMESSION','权限校验',9999,'"kesplus_platform"."router_common".checkPermission(request,response)',NULL,NULL,'/**',NULL,NULL,NULL,NULL,'0','1.0.0','1','0',0),
+	 ('4','SET_APP_MODULE','初始化应用和模块信息',9997,'"kesplus_platform"."router_common".initAppInfo(request,response)',NULL,NULL,'/**',NULL,NULL,NULL,NULL,'0','1.0.0','1','0',0);

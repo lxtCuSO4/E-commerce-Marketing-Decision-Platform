@@ -1,0 +1,45 @@
+
+DROP TABLE IF EXISTS "kesplus_app"."oa_comments";
+create TABLE "kesplus_app"."oa_comments" (
+	"ID" varchar(100),
+	"CREATE_ID" varchar(100),
+	"CREATE_NAME" varchar(100),
+	"CREATE_DATE" datetime,
+	"type" varchar(100),
+	"business_id" varchar(100),
+	"CONTENT" text,
+	"title" varchar(500),
+	"path" varchar(500),
+	"clevel" int,
+	"DEPARTMENT_ID" varchar(100),
+	"DEPARTMENT_NAME" varchar(100),
+	"POST_ID" varchar(100),
+	"POST_NAME" varchar(100),
+	"IS_HIDDEN" int,
+	"SHOW_TO_ID" text,
+	"REPLY_TO_ID" varchar(100),
+	"REPLY_TO_NAME" varchar(100),
+    "EXT_ATT1" varchar(100),
+    "EXT_ATT2" varchar(100),
+    "EXT_ATT3" varchar(100),
+	"EXT_ATT4" varchar(100),
+	"relate_info" text,
+	"PRAISE_TO_SUMMARY" varchar(100),
+	"praise_member_ids" text,
+	"PID" varchar(100),
+	"ctype" varchar(100),
+	"summary_id" varchar(100),
+	"is_audited" int,
+	"important_level" int,
+	"formid" varchar(100),
+	"forward_count" int,
+	"reply_counts" int,
+	"PROCESS_ID" varchar(100),
+	"PARENTFORM_SUMMARYID" varchar(100),
+	"ATTACHMENT_ARCHIVE_ID" varchar(100),
+	"ADVANCE_PIGEONHOLE" text,
+	"attachments" json
+);
+ALTER TABLE "kesplus_app"."oa_comments" ADD CONSTRAINT "oa_comments_pkey" PRIMARY KEY ("id")  ENABLE VALIDATE;
+CREATE INDEX inxex_kesplus_app_oa_comments_index_1 ON kesplus_app.oa_comments USING btree (business_id);
+CREATE INDEX inxex_kesplus_app_oa_comments_index_2 ON kesplus_app.oa_comments USING btree (PID);

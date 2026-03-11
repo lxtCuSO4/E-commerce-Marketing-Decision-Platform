@@ -1,0 +1,15 @@
+CREATE OR REPLACE FUNCTION "kesplus_platform".common_offset(pageIndex integer, rv_limit integer)
+    RETURNS integer
+AS WRAPPED
+glovY5P6YTOOfDsBV2PC9cAE1sxchFITaTlp7WHdFqQRtiPRaymc+Dk5cFFl
+QXiWXUOKJkUpumAPfs8z6TILQ0kH+UM2VKXXfIj6xln7gcjodUeQPyI1Focx
+V/+X5uB/mKcL1QnM20Kr/ny+op/9oouaVFnl5H0kXnQOsuzGIvrQQJqjKTfG
+PBO9pQdhAtwM/sP2ljHl6xXz8oeZMgVBfir8CvkiUDxrP7klChYmR4NKziQp
+c5LdXYBDeqzrWCi+A4Ize+e00mUjF5ubObeu8jDrSNBdKWR8q91VcQvXASX3
+vfQRI9SUVt15c8DOV9sUnhRJJGecpR6y8LEV/ikFC8kw/eVwXXu9s6+/GCra
+3wrFigT/iRArs3czJ6KuQ5svo73CoYuZUYJi19+/1y0PoL3DNsb7O2h7VGvF
+4PUmp6ivjMHQJyHk7G9+uqdOHmWw6cmKN0SLnWmZKsRaa/zlVNfenglZ7j3g
+mxJyLt7nXUfIWjNko1TW4RaGwnIXjhOWydgdfXDSEBgE8LOdqce23Gatx3sH
+2+N9tHycm4NvDiQ=
+END;
+

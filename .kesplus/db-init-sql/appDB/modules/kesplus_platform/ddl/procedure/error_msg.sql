@@ -1,0 +1,10 @@
+CREATE OR REPLACE PROCEDURE kesplus_platform.error_msg(msg text)
+AS WRAPPED
+ws89BqpXjC2T5ugFhcG0vy2NmIzqmF6ig1gfD2t6ZkYIQk6yXKXPkQwxUJ6s
+Pe/X8lLK5PG3C1L+/FTicyPtx/Mnoztt30mTr6mDg2sjV357Fg6wOzsG3TlA
+Ar3Oq+HMOxGwjgQftYsVrUSjckuN34VtiFUsPzm1Rn9di07oNr0PHgbO7u3W
+QFuPza2qkOdpszdXKlkhJ7jzKoMLOPvCIOcKjzYCqAxMzhHof19ifKzYIf0F
+TXDfHhy8lzpRe1k4bXejMTMc7gMfmvUWLGZNUl2vxXwRy1VHf83rLZCNHR2l
+1+/euR6FWHuLcvZj31sLlskyseV87XLyz6YIYRQhnA==
+END;
+

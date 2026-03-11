@@ -1,0 +1,3 @@
+INSERT INTO kesplus_base.kesplus_module_role ("id","name","code","description","global_flag","role_level","data_scope","classify","role_type","hidden_flag","db_role_code","enabled","create_by","create_time","update_by","update_time","tenant_id","module_id","dept_id","obj_type","parent_id","sort_num") VALUES
+	 ('4fc4d87dcab3488cb3d7487a58928af2','应用管理员','appAdmin','应用管理员',true,1,'0',2,0,false,null,1,'${currentUserId}',SYSDATE,NULL,NULL,'0','dfb8894291c34ac28e3458bba277e0ff','0', 'obj', '11', 1),
+	 ('a5438851fa214cd49264ba9992925665','基础公共角色','appBase','每个用户默认的公共角色',true,1,'0',1,0,false,null,1,'${currentUserId}',SYSDATE,NULL,NULL,'0','dfb8894291c34ac28e3458bba277e0ff','0', 'obj', '11', 2);

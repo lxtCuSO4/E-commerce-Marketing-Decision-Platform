@@ -1,0 +1,2 @@
+INSERT INTO "kesplus_app"."kesplus_audit_config" ("id", "type", "obj_id", "obj_value", "create_time") VALUES('1', 'audit_config', 'audit_config', '{"enableAudit": 0,"interval":1,"limit":10000}'::"jsonb",SYSDATE);
+INSERT INTO "kesplus_app"."kesplus_audit_config" ("id", "type", "obj_id", "obj_value", "create_time") VALUES('2', 'audit_log_jobid',null, null,SYSDATE);

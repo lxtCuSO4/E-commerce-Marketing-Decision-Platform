@@ -1,0 +1,7 @@
+CREATE OR REPLACE PROCEDURE kesplus_platform.setting(settings jsonb)
+AS WRAPPED
+nb0D4xBdB7UbULhxcendvV9zskBfqAWV+xKJwHBMZH07Z0OjXfZ3iW5dXz5S
+BcRurqCm+rTG7YnhOAz3cipt06ib7TV8pIiqFW+1fqhOTTgho2P43IItE5Ye
+bXhHqboTfHN1+j/ly0A29CNtgeL08A==
+END;
+

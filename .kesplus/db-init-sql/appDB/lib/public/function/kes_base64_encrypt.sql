@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION public.kes_base64_encrypt(content text)
+ RETURNS text
+AS WRAPPED
+YZl2harYXp3yh3NT3xLpDhmac+tfmZT4JxzQq500NEIgAdMabqSti9Tfd2SJ
+VSCxYmVnStb7FoR/mSjyKDFiGmcsoIEeZ0GiVC7P3CoNggcVgQ1vxo+h+Rhb
+GHd5reFT2LrEuT3H3MT/eIrggSttpD5QVF4i9D8Oup3rkUfctCe8IDxrALza
+qC1WiePQrvYC1J9MssIcoW/OVwYuDNSfZjvkz3lc1yYHD3tQuuaer2W90aOc
+lSL4z9gdigc5Sq8mf6pWITG+TQqFcd3UcG4FI1VuZ3Hy8NTjegDDWNpXKrXP
+trn9KkRKHHcYKe9aYBHZfefgbUorob+Bci8W6vvjvZpI4wy8dBJXOOW/zwV+
+sX9Gc47cpdPJMy+mVUpgtT7EDb+aLapFUnsarjRRDPRmrg==
+END;
+

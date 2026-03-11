@@ -1,0 +1,16 @@
+{
+	"appName":"电商营销决策平台",
+	"appCode":"EMDMP",
+	"serverUrl":"http://localhost:54801",
+	"appInfo":{
+		"id":"9cdba491a18242dcbfd261b985bb0865",
+		"layout":"1",
+		"security":"http",
+		"selectModule":""
+	},
+	"supportVersion":{
+		"createVersion":"v3.2.0",
+		"maxVersion":"v3.2.0",
+		"minVersion":"v3.2.0"
+	}
+}

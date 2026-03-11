@@ -1,0 +1,15 @@
+CREATE OR REPLACE PACKAGE "kesplus_app"."kesplus_pkg_spi" AUTHID CURRENT_USER AS
+	FUNCTION list_configs(spiCode varchar, spiToken varchar) return jsonb;
+END kesplus_pkg_spi;
+
+CREATE OR REPLACE PACKAGE BODY "kesplus_app"."kesplus_pkg_spi" AS WRAPPED
+cOEUa96KxU7yT7c1sKSBehIw9i2CGaZAyabV81AIbJrgykI/+JjZzIX83kwN
+L+Lx1b4iR2sSN7jdKmtS+UpH0ouVNkEB3RRS7kM/ZVkllh5GSYLfvTPjOhKG
+6+L5h23SuKM8qW7oPOGaNvGr4bwSw2mprz0dvLZjpzYD1QCOs29lOqzt4VLc
+NowT4ysZ2/U9OtLk844ZErFT6xMJ04fZ52x3K5WC5CTxU4xrxX7mnwUFhQTU
+OA1u38GQh0GSwYAwPpGIgzAcMlLIXqoKRWlLp2Ggs4+Avm/fr2XK8/i0EFmy
+9bJsnLOqliLEgd/HaMUfFd0dWzGF6xsIknCLAN4yFExAy5+GzBYhb8OrymqM
+SfnDYxxYTOZ9BTA1MLMxa+iV/fF/3R6im2YiE3HQmpl4S5sG9wooBRWQAPTh
+SbWghjU=
+END;
+
