@@ -1,0 +1,46 @@
+create or replace function "BOperationsModule"."getMerchantDiagnosticsByPage"(page_index integer,page_size integer) return JSON as
+/**
+ * @Description 查询B复购运营商家诊断列表
+ * @Param page_index 当前页码，从1开始
+ * @Param page_size 每页条数
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_page_index integer := greatest(coalesce(page_index, 1), 1);
+  v_page_size integer := greatest(coalesce(page_size, 20), 1);
+  v_offset integer;
+  execute_sql text;
+begin
+  v_offset := (v_page_index - 1) * v_page_size;
+
+  execute_sql := '
+    select
+      count(1) as "totalElements",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              t.merchant_id as "merchantId",
+              t.merchant_buyer_count as "merchantBuyerCount",
+              t.avg_repurchase_score as "avgRepurchaseScore",
+              t.high_priority_user_count as "highPriorityUserCount",
+              t.risk_user_count as "riskUserCount",
+              t.merchant_tag as "merchantTag"
+            from "BOperationsModule".b_merchant_diagnostics t
+            order by t.high_priority_user_count desc, t.avg_repurchase_score desc
+            limit ' || v_page_size || '
+            offset ' || v_offset || '
+          ) x
+        ),
+        ''[]''::json
+      ) as "content"
+    from "BOperationsModule".b_merchant_diagnostics t
+  ';
+
+  execute kesplus_platform.json.object_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

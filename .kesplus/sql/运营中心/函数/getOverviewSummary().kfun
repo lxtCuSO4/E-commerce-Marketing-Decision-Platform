@@ -1,0 +1,55 @@
+create or replace function "BOperationsModule"."getOverviewSummary"() return JSON as
+/**
+ * @Description 查询B复购运营首页总览
+ * @Return JSON
+ */
+declare
+  v_result json;
+  execute_sql text;
+begin
+  execute_sql := '
+    select
+      (
+        select coalesce(sum(m.high_priority_user_count), 0)
+        from "BOperationsModule".b_merchant_diagnostics m
+      ) as "highPriorityUserCount",
+      (
+        select count(*)
+        from "BOperationsModule".b_recall_tasks t
+        where t.task_group in (''content_nurture'', ''coupon_followup'')
+      ) as "mediumPriorityUserCount",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              m.merchant_tag as "name",
+              count(*) as "value"
+            from "BOperationsModule".b_merchant_diagnostics m
+            group by m.merchant_tag
+            order by count(*) desc
+          ) x
+        ),
+        ''[]''::json
+      ) as "merchantTagBreakdown",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              t.task_group as "name",
+              count(*) as "value"
+            from "BOperationsModule".b_recall_tasks t
+            group by t.task_group
+            order by count(*) desc
+          ) x
+        ),
+        ''[]''::json
+      ) as "taskGroupBreakdown"
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;
