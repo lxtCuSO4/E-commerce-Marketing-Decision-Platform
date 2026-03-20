@@ -1,0 +1,37 @@
+create or replace function "SalesPredictModule"."getSalesForecastPredictionDetailById"(id varchar) return JSON as
+/**
+ * @Description 根据主键ID查询销量预测可视化详情
+ * @Param id 主键ID，精确匹配
+ * @Return JSON
+ */
+declare
+  v_result json;
+  execute_sql text;
+begin
+  execute_sql := '
+    select
+      t1.id as "id",
+      t1.item_id as "itemId",
+      t1.anchor_date as "anchorDate",
+      t1.category as "category",
+      t1.brand_id as "brandId",
+      t1.seller_id as "sellerId",
+      t1.pay_cnt_7d as "payCnt7D",
+      t1.pay_cnt_30d as "payCnt30D",
+      t1.pred_pay_d1 as "predPayD1",
+      t1.pred_pay_d2 as "predPayD2",
+      t1.pred_pay_d3 as "predPayD3",
+      t1.pred_pay_d4 as "predPayD4",
+      t1.pred_pay_d5 as "predPayD5",
+      t1.pred_pay_d6 as "predPayD6",
+      t1.pred_pay_d7 as "predPayD7",
+      t1.pred_7d_pay as "pred7DPay"
+    from "SalesPredictModule".rec_sales_forecast_predictions t1
+    where t1.id = ' || quote_literal(id) || '
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

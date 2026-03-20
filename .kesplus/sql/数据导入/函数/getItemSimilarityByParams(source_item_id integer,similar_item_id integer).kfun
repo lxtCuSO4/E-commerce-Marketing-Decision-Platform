@@ -1,0 +1,40 @@
+create or replace function "DataImportModule"."getItemSimilarityByParams"(source_item_id integer,similar_item_id integer) return JSON as
+/**
+ * @Description 根据源商品ID和相似商品ID查询商品相似度信息
+ * @Param source_item_id 源商品ID，精确匹配，必填
+ * @Param similar_item_id 相似商品ID，精确匹配，非必填
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  if source_item_id is null then
+    kesplus_platform.business_exception('400', '源商品ID不能为空');
+  end if;
+
+  v_where_sql := v_where_sql || format(' and t1.source_item_id = %s', source_item_id);
+
+  if similar_item_id is not null then
+    v_where_sql := v_where_sql || format(' and t1.similar_item_id = %s', similar_item_id);
+  end if;
+
+  execute_sql := '
+    select
+      t1.id as id,
+      t1.source_item_id as sourceItemId,
+      t1.similar_item_id as similarItemId,
+      t1.similarity_score as similarityScore,
+      t1.rank_no as rankNo,
+      t1.category as category
+    from "DataImportModule".rec_tmall_item_similarity t1
+    ' || v_where_sql || '
+    order by t1.source_item_id, t1.rank_no, t1.similar_item_id
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

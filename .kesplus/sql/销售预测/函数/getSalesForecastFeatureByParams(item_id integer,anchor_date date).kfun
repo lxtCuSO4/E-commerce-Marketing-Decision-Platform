@@ -1,0 +1,186 @@
+create or replace function "SalesPredictModule"."getSalesForecastFeatureByParams"(item_id integer,anchor_date date) return JSON as
+/**
+ * @Description 根据商品ID和锚定日期查询天猫销售预测特征信息
+ * @Param item_id 商品ID，精确匹配，非必填
+ * @Param anchor_date 锚定日期，精确匹配，非必填
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  if item_id is not null then
+    v_where_sql := v_where_sql || format(' and t1.item_id = %s', item_id);
+  end if;
+
+  if anchor_date is not null then
+    v_where_sql := v_where_sql || format(' and t1.anchor_date = %L::date', anchor_date);
+  end if;
+
+  execute_sql := '
+    select
+      t1.id as "id",
+      t1.item_id as "itemId",
+      t1.anchor_date as "anchorDate",
+      t1.category as "category",
+      t1.brand_id as "brandId",
+      t1.seller_id as "sellerId",
+
+      t1.click_cnt_1d as "clickCnt1D",
+      t1.click_uv_1d as "clickUv1D",
+      t1.click_avg_1d as "clickAvg1D",
+      t1.click_is_zero_1d as "clickIsZero1D",
+
+      t1.click_cnt_3d as "clickCnt3D",
+      t1.click_uv_3d as "clickUv3D",
+      t1.click_avg_3d as "clickAvg3D",
+      t1.click_is_zero_3d as "clickIsZero3D",
+
+      t1.click_cnt_7d as "clickCnt7D",
+      t1.click_uv_7d as "clickUv7D",
+      t1.click_avg_7d as "clickAvg7D",
+      t1.click_is_zero_7d as "clickIsZero7D",
+
+      t1.click_cnt_14d as "clickCnt14D",
+      t1.click_uv_14d as "clickUv14D",
+      t1.click_avg_14d as "clickAvg14D",
+      t1.click_is_zero_14d as "clickIsZero14D",
+
+      t1.click_cnt_30d as "clickCnt30D",
+      t1.click_uv_30d as "clickUv30D",
+      t1.click_avg_30d as "clickAvg30D",
+      t1.click_is_zero_30d as "clickIsZero30D",
+
+      t1.collect_cnt_1d as "collectCnt1D",
+      t1.collect_uv_1d as "collectUv1D",
+      t1.collect_avg_1d as "collectAvg1D",
+      t1.collect_is_zero_1d as "collectIsZero1D",
+
+      t1.collect_cnt_3d as "collectCnt3D",
+      t1.collect_uv_3d as "collectUv3D",
+      t1.collect_avg_3d as "collectAvg3D",
+      t1.collect_is_zero_3d as "collectIsZero3D",
+
+      t1.collect_cnt_7d as "collectCnt7D",
+      t1.collect_uv_7d as "collectUv7D",
+      t1.collect_avg_7d as "collectAvg7D",
+      t1.collect_is_zero_7d as "collectIsZero7D",
+
+      t1.collect_cnt_14d as "collectCnt14D",
+      t1.collect_uv_14d as "collectUv14D",
+      t1.collect_avg_14d as "collectAvg14D",
+      t1.collect_is_zero_14d as "collectIsZero14D",
+
+      t1.collect_cnt_30d as "collectCnt30D",
+      t1.collect_uv_30d as "collectUv30D",
+      t1.collect_avg_30d as "collectAvg30D",
+      t1.collect_is_zero_30d as "collectIsZero30D",
+
+      t1.cart_cnt_1d as "cartCnt1D",
+      t1.cart_uv_1d as "cartUv1D",
+      t1.cart_avg_1d as "cartAvg1D",
+      t1.cart_is_zero_1d as "cartIsZero1D",
+
+      t1.cart_cnt_3d as "cartCnt3D",
+      t1.cart_uv_3d as "cartUv3D",
+      t1.cart_avg_3d as "cartAvg3D",
+      t1.cart_is_zero_3d as "cartIsZero3D",
+
+      t1.cart_cnt_7d as "cartCnt7D",
+      t1.cart_uv_7d as "cartUv7D",
+      t1.cart_avg_7d as "cartAvg7D",
+      t1.cart_is_zero_7d as "cartIsZero7D",
+
+      t1.cart_cnt_14d as "cartCnt14D",
+      t1.cart_uv_14d as "cartUv14D",
+      t1.cart_avg_14d as "cartAvg14D",
+      t1.cart_is_zero_14d as "cartIsZero14D",
+
+      t1.cart_cnt_30d as "cartCnt30D",
+      t1.cart_uv_30d as "cartUv30D",
+      t1.cart_avg_30d as "cartAvg30D",
+      t1.cart_is_zero_30d as "cartIsZero30D",
+
+      t1.pay_cnt_1d as "payCnt1D",
+      t1.pay_uv_1d as "payUv1D",
+      t1.pay_avg_1d as "payAvg1D",
+      t1.pay_is_zero_1d as "payIsZero1D",
+
+      t1.pay_cnt_3d as "payCnt3D",
+      t1.pay_uv_3d as "payUv3D",
+      t1.pay_avg_3d as "payAvg3D",
+      t1.pay_is_zero_3d as "payIsZero3D",
+
+      t1.pay_cnt_7d as "payCnt7D",
+      t1.pay_uv_7d as "payUv7D",
+      t1.pay_avg_7d as "payAvg7D",
+      t1.pay_is_zero_7d as "payIsZero7D",
+
+      t1.pay_cnt_14d as "payCnt14D",
+      t1.pay_uv_14d as "payUv14D",
+      t1.pay_avg_14d as "payAvg14D",
+      t1.pay_is_zero_14d as "payIsZero14D",
+
+      t1.pay_cnt_30d as "payCnt30D",
+      t1.pay_uv_30d as "payUv30D",
+      t1.pay_avg_30d as "payAvg30D",
+      t1.pay_is_zero_30d as "payIsZero30D",
+
+      t1.click_cnt_prev_7d as "clickCntPrev7D",
+      t1.pay_cnt_prev_7d as "payCntPrev7D",
+      t1.cart_cnt_prev_7d as "cartCntPrev7D",
+      t1.click_cnt_prev_14d as "clickCntPrev14D",
+      t1.pay_cnt_prev_14d as "payCntPrev14D",
+
+      t1.pay_per_click_7d as "payPerClick7D",
+      t1.cart_per_click_7d as "cartPerClick7D",
+      t1.collect_per_click_7d as "collectPerClick7D",
+      t1.pay_uv_per_click_uv_7d as "payUvPerClickUv7D",
+      t1.pay_ratio_3d_to_7d as "payRatio3DTo7D",
+      t1.pay_ratio_7d_to_14d as "payRatio7DTo14D",
+
+      t1.click_cnt_delta_7d as "clickCntDelta7D",
+      t1.pay_cnt_delta_7d as "payCntDelta7D",
+      t1.cart_cnt_delta_7d as "cartCntDelta7D",
+      t1.pay_cnt_delta_14d as "payCntDelta14D",
+      t1.click_cnt_delta_14d as "clickCntDelta14D",
+
+      t1.pay_mean_7d as "payMean7D",
+      t1.pay_mean_14d as "payMean14D",
+      t1.pay_mean_30d as "payMean30D",
+      t1.pay_std_7d as "payStd7D",
+      t1.pay_std_14d as "payStd14D",
+      t1.pay_std_30d as "payStd30D",
+      t1.pay_max_7d as "payMax7D",
+      t1.pay_max_14d as "payMax14D",
+      t1.pay_max_30d as "payMax30D",
+
+      t1.click_mean_7d as "clickMean7D",
+      t1.click_mean_14d as "clickMean14D",
+      t1.click_mean_30d as "clickMean30D",
+      t1.click_std_7d as "clickStd7D",
+      t1.click_std_14d as "clickStd14D",
+      t1.click_std_30d as "clickStd30D",
+
+      t1.pay_active_days_30d as "payActiveDays30D",
+      t1.active_days_30d as "activeDays30D",
+      t1.days_since_last_click as "daysSinceLastClick",
+      t1.days_since_last_pay as "daysSinceLastPay",
+      t1.cumulative_active_days as "cumulativeActiveDays",
+      t1.cumulative_pay_days as "cumulativePayDays",
+      t1.item_age_days as "itemAgeDays",
+      t1.day_of_week as "dayOfWeek",
+      t1.is_weekend as "isWeekend",
+      t1.day_of_month as "dayOfMonth",
+      t1.month as "month"
+    from "SalesPredictModule".rec_tmall_sales_forecast_feature t1
+    ' || v_where_sql || '
+    order by t1.item_id, t1.anchor_date
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

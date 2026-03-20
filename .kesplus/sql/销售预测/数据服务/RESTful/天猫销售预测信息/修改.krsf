@@ -1,0 +1,2 @@
+-- kingbase-language-server:disable validation
+SELECT "SalesPredictModule"."pkg_rec_tmall_sales_forecast_feature".update(#{jsonData})

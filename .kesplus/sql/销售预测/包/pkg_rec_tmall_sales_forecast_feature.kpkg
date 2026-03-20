@@ -1,0 +1,569 @@
+CREATE OR REPLACE PACKAGE "SalesPredictModule"."pkg_rec_tmall_sales_forecast_feature" AUTHID CURRENT_USER AS
+	FUNCTION add(jsonData jsonb) RETURN JSONB;
+	FUNCTION update(jsonData jsonb) RETURN JSONB;
+	PROCEDURE del(ids varchar);
+	FUNCTION get_by_id(id varchar) RETURN JSONB;
+	FUNCTION list(jsonData jsonb) RETURN JSONB;
+	FUNCTION page(jsonData jsonb) RETURN JSONB;
+
+	/*工作流表单回调存储过程定义*/
+	PROCEDURE workflowCallback (flowContent JSONB);
+
+	--当前业务主表的表名
+	TB_NAME VARCHAR := 'rec_tmall_sales_forecast_feature';
+
+	--当前业务主表的主键字段
+	PK_COLUMN_NAME VARCHAR := 'id';
+
+	--分页查询页面的筛选条件 JSON数组形式,包括tableName、tableAlias、keyName、queryType和blurry
+	--例如:[{"blurry": "value_a", "keyName": "columnA", "queryType": "=", "tableName": "table_a", "tableAlias": "t"}] 代表table_a的筛选条件,使用时表示为 t."columnA" = 'value_a'
+	CONDITIONS JSON := '[]'::JSON;
+
+	--表单和业务字段的映射关系
+	ALIAS_DEFINITION JSONB := '[{"alias": "t1", "columns": [{"inForm": false, "inTable": false, "columnName": "id", "columnAlias": "id"}, {"inForm": false, "inTable": false, "columnName": "module_code", "columnAlias": "moduleCode"}, {"inForm": false, "inTable": false, "columnName": "dept_id", "columnAlias": "deptId"}, {"inForm": true, "inTable": true, "columnName": "item_id", "columnAlias": "itemId"}, {"inForm": true, "inTable": true, "columnName": "anchor_date", "columnAlias": "anchorDate"}, {"inForm": true, "inTable": true, "columnName": "category", "columnAlias": "category"}, {"inForm": true, "inTable": true, "columnName": "brand_id", "columnAlias": "brandId"}, {"inForm": true, "inTable": true, "columnName": "seller_id", "columnAlias": "sellerId"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_1d", "columnAlias": "clickCnt1D"}, {"inForm": true, "inTable": true, "columnName": "click_uv_1d", "columnAlias": "clickUv1D"}, {"inForm": true, "inTable": true, "columnName": "click_avg_1d", "columnAlias": "clickAvg1D"}, {"inForm": true, "inTable": true, "columnName": "click_is_zero_1d", "columnAlias": "clickIsZero1D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_3d", "columnAlias": "clickCnt3D"}, {"inForm": true, "inTable": true, "columnName": "click_uv_3d", "columnAlias": "clickUv3D"}, {"inForm": true, "inTable": true, "columnName": "click_avg_3d", "columnAlias": "clickAvg3D"}, {"inForm": true, "inTable": true, "columnName": "click_is_zero_3d", "columnAlias": "clickIsZero3D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_7d", "columnAlias": "clickCnt7D"}, {"inForm": true, "inTable": true, "columnName": "click_uv_7d", "columnAlias": "clickUv7D"}, {"inForm": true, "inTable": true, "columnName": "click_avg_7d", "columnAlias": "clickAvg7D"}, {"inForm": true, "inTable": true, "columnName": "click_is_zero_7d", "columnAlias": "clickIsZero7D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_14d", "columnAlias": "clickCnt14D"}, {"inForm": true, "inTable": true, "columnName": "click_uv_14d", "columnAlias": "clickUv14D"}, {"inForm": true, "inTable": true, "columnName": "click_avg_14d", "columnAlias": "clickAvg14D"}, {"inForm": true, "inTable": true, "columnName": "click_is_zero_14d", "columnAlias": "clickIsZero14D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_30d", "columnAlias": "clickCnt30D"}, {"inForm": true, "inTable": true, "columnName": "click_uv_30d", "columnAlias": "clickUv30D"}, {"inForm": true, "inTable": true, "columnName": "click_avg_30d", "columnAlias": "clickAvg30D"}, {"inForm": true, "inTable": true, "columnName": "click_is_zero_30d", "columnAlias": "clickIsZero30D"}, {"inForm": true, "inTable": true, "columnName": "collect_cnt_1d", "columnAlias": "collectCnt1D"}, {"inForm": true, "inTable": true, "columnName": "collect_uv_1d", "columnAlias": "collectUv1D"}, {"inForm": true, "inTable": true, "columnName": "collect_avg_1d", "columnAlias": "collectAvg1D"}, {"inForm": true, "inTable": true, "columnName": "collect_is_zero_1d", "columnAlias": "collectIsZero1D"}, {"inForm": true, "inTable": true, "columnName": "collect_cnt_3d", "columnAlias": "collectCnt3D"}, {"inForm": true, "inTable": true, "columnName": "collect_uv_3d", "columnAlias": "collectUv3D"}, {"inForm": true, "inTable": true, "columnName": "collect_avg_3d", "columnAlias": "collectAvg3D"}, {"inForm": true, "inTable": true, "columnName": "collect_is_zero_3d", "columnAlias": "collectIsZero3D"}, {"inForm": true, "inTable": true, "columnName": "collect_cnt_7d", "columnAlias": "collectCnt7D"}, {"inForm": true, "inTable": true, "columnName": "collect_uv_7d", "columnAlias": "collectUv7D"}, {"inForm": true, "inTable": true, "columnName": "collect_avg_7d", "columnAlias": "collectAvg7D"}, {"inForm": true, "inTable": true, "columnName": "collect_is_zero_7d", "columnAlias": "collectIsZero7D"}, {"inForm": true, "inTable": true, "columnName": "collect_cnt_14d", "columnAlias": "collectCnt14D"}, {"inForm": true, "inTable": true, "columnName": "collect_uv_14d", "columnAlias": "collectUv14D"}, {"inForm": true, "inTable": true, "columnName": "collect_avg_14d", "columnAlias": "collectAvg14D"}, {"inForm": true, "inTable": true, "columnName": "collect_is_zero_14d", "columnAlias": "collectIsZero14D"}, {"inForm": true, "inTable": true, "columnName": "collect_cnt_30d", "columnAlias": "collectCnt30D"}, {"inForm": true, "inTable": true, "columnName": "collect_uv_30d", "columnAlias": "collectUv30D"}, {"inForm": true, "inTable": true, "columnName": "collect_avg_30d", "columnAlias": "collectAvg30D"}, {"inForm": true, "inTable": true, "columnName": "collect_is_zero_30d", "columnAlias": "collectIsZero30D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_1d", "columnAlias": "cartCnt1D"}, {"inForm": true, "inTable": true, "columnName": "cart_uv_1d", "columnAlias": "cartUv1D"}, {"inForm": true, "inTable": true, "columnName": "cart_avg_1d", "columnAlias": "cartAvg1D"}, {"inForm": true, "inTable": true, "columnName": "cart_is_zero_1d", "columnAlias": "cartIsZero1D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_3d", "columnAlias": "cartCnt3D"}, {"inForm": true, "inTable": true, "columnName": "cart_uv_3d", "columnAlias": "cartUv3D"}, {"inForm": true, "inTable": true, "columnName": "cart_avg_3d", "columnAlias": "cartAvg3D"}, {"inForm": true, "inTable": true, "columnName": "cart_is_zero_3d", "columnAlias": "cartIsZero3D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_7d", "columnAlias": "cartCnt7D"}, {"inForm": true, "inTable": true, "columnName": "cart_uv_7d", "columnAlias": "cartUv7D"}, {"inForm": true, "inTable": true, "columnName": "cart_avg_7d", "columnAlias": "cartAvg7D"}, {"inForm": true, "inTable": true, "columnName": "cart_is_zero_7d", "columnAlias": "cartIsZero7D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_14d", "columnAlias": "cartCnt14D"}, {"inForm": true, "inTable": true, "columnName": "cart_uv_14d", "columnAlias": "cartUv14D"}, {"inForm": true, "inTable": true, "columnName": "cart_avg_14d", "columnAlias": "cartAvg14D"}, {"inForm": true, "inTable": true, "columnName": "cart_is_zero_14d", "columnAlias": "cartIsZero14D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_30d", "columnAlias": "cartCnt30D"}, {"inForm": true, "inTable": true, "columnName": "cart_uv_30d", "columnAlias": "cartUv30D"}, {"inForm": true, "inTable": true, "columnName": "cart_avg_30d", "columnAlias": "cartAvg30D"}, {"inForm": true, "inTable": true, "columnName": "cart_is_zero_30d", "columnAlias": "cartIsZero30D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_1d", "columnAlias": "payCnt1D"}, {"inForm": true, "inTable": true, "columnName": "pay_uv_1d", "columnAlias": "payUv1D"}, {"inForm": true, "inTable": true, "columnName": "pay_avg_1d", "columnAlias": "payAvg1D"}, {"inForm": true, "inTable": true, "columnName": "pay_is_zero_1d", "columnAlias": "payIsZero1D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_3d", "columnAlias": "payCnt3D"}, {"inForm": true, "inTable": true, "columnName": "pay_uv_3d", "columnAlias": "payUv3D"}, {"inForm": true, "inTable": true, "columnName": "pay_avg_3d", "columnAlias": "payAvg3D"}, {"inForm": true, "inTable": true, "columnName": "pay_is_zero_3d", "columnAlias": "payIsZero3D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_7d", "columnAlias": "payCnt7D"}, {"inForm": true, "inTable": true, "columnName": "pay_uv_7d", "columnAlias": "payUv7D"}, {"inForm": true, "inTable": true, "columnName": "pay_avg_7d", "columnAlias": "payAvg7D"}, {"inForm": true, "inTable": true, "columnName": "pay_is_zero_7d", "columnAlias": "payIsZero7D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_14d", "columnAlias": "payCnt14D"}, {"inForm": true, "inTable": true, "columnName": "pay_uv_14d", "columnAlias": "payUv14D"}, {"inForm": true, "inTable": true, "columnName": "pay_avg_14d", "columnAlias": "payAvg14D"}, {"inForm": true, "inTable": true, "columnName": "pay_is_zero_14d", "columnAlias": "payIsZero14D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_30d", "columnAlias": "payCnt30D"}, {"inForm": true, "inTable": true, "columnName": "pay_uv_30d", "columnAlias": "payUv30D"}, {"inForm": true, "inTable": true, "columnName": "pay_avg_30d", "columnAlias": "payAvg30D"}, {"inForm": true, "inTable": true, "columnName": "pay_is_zero_30d", "columnAlias": "payIsZero30D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_prev_7d", "columnAlias": "clickCntPrev7D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_prev_7d", "columnAlias": "payCntPrev7D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_prev_7d", "columnAlias": "cartCntPrev7D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_prev_14d", "columnAlias": "clickCntPrev14D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_prev_14d", "columnAlias": "payCntPrev14D"}, {"inForm": true, "inTable": true, "columnName": "pay_per_click_7d", "columnAlias": "payPerClick7D"}, {"inForm": true, "inTable": true, "columnName": "cart_per_click_7d", "columnAlias": "cartPerClick7D"}, {"inForm": true, "inTable": true, "columnName": "collect_per_click_7d", "columnAlias": "collectPerClick7D"}, {"inForm": true, "inTable": true, "columnName": "pay_uv_per_click_uv_7d", "columnAlias": "payUvPerClickUv7D"}, {"inForm": true, "inTable": true, "columnName": "pay_ratio_3d_to_7d", "columnAlias": "payRatio3DTo7D"}, {"inForm": true, "inTable": true, "columnName": "pay_ratio_7d_to_14d", "columnAlias": "payRatio7DTo14D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_delta_7d", "columnAlias": "clickCntDelta7D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_delta_7d", "columnAlias": "payCntDelta7D"}, {"inForm": true, "inTable": true, "columnName": "cart_cnt_delta_7d", "columnAlias": "cartCntDelta7D"}, {"inForm": true, "inTable": true, "columnName": "pay_cnt_delta_14d", "columnAlias": "payCntDelta14D"}, {"inForm": true, "inTable": true, "columnName": "click_cnt_delta_14d", "columnAlias": "clickCntDelta14D"}, {"inForm": true, "inTable": true, "columnName": "pay_mean_7d", "columnAlias": "payMean7D"}, {"inForm": true, "inTable": true, "columnName": "pay_mean_14d", "columnAlias": "payMean14D"}, {"inForm": true, "inTable": true, "columnName": "pay_mean_30d", "columnAlias": "payMean30D"}, {"inForm": true, "inTable": true, "columnName": "pay_std_7d", "columnAlias": "payStd7D"}, {"inForm": true, "inTable": true, "columnName": "pay_std_14d", "columnAlias": "payStd14D"}, {"inForm": true, "inTable": true, "columnName": "pay_std_30d", "columnAlias": "payStd30D"}, {"inForm": true, "inTable": true, "columnName": "pay_max_7d", "columnAlias": "payMax7D"}, {"inForm": true, "inTable": true, "columnName": "pay_max_14d", "columnAlias": "payMax14D"}, {"inForm": true, "inTable": true, "columnName": "pay_max_30d", "columnAlias": "payMax30D"}, {"inForm": true, "inTable": true, "columnName": "click_mean_7d", "columnAlias": "clickMean7D"}, {"inForm": true, "inTable": true, "columnName": "click_mean_14d", "columnAlias": "clickMean14D"}, {"inForm": true, "inTable": true, "columnName": "click_mean_30d", "columnAlias": "clickMean30D"}, {"inForm": true, "inTable": true, "columnName": "click_std_7d", "columnAlias": "clickStd7D"}, {"inForm": true, "inTable": true, "columnName": "click_std_14d", "columnAlias": "clickStd14D"}, {"inForm": true, "inTable": true, "columnName": "click_std_30d", "columnAlias": "clickStd30D"}, {"inForm": true, "inTable": true, "columnName": "pay_active_days_30d", "columnAlias": "payActiveDays30D"}, {"inForm": true, "inTable": true, "columnName": "active_days_30d", "columnAlias": "activeDays30D"}, {"inForm": true, "inTable": true, "columnName": "days_since_last_click", "columnAlias": "daysSinceLastClick"}, {"inForm": true, "inTable": true, "columnName": "days_since_last_pay", "columnAlias": "daysSinceLastPay"}, {"inForm": true, "inTable": true, "columnName": "cumulative_active_days", "columnAlias": "cumulativeActiveDays"}, {"inForm": true, "inTable": true, "columnName": "cumulative_pay_days", "columnAlias": "cumulativePayDays"}, {"inForm": true, "inTable": true, "columnName": "item_age_days", "columnAlias": "itemAgeDays"}, {"inForm": true, "inTable": true, "columnName": "day_of_week", "columnAlias": "dayOfWeek"}, {"inForm": true, "inTable": true, "columnName": "is_weekend", "columnAlias": "isWeekend"}, {"inForm": true, "inTable": true, "columnName": "day_of_month", "columnAlias": "dayOfMonth"}, {"inForm": true, "inTable": true, "columnName": "month", "columnAlias": "month"}], "tableId": "d229302582af405caf4a62a089367f9b", "refModel": "1=1", "syncMode": true, "mainTable": true, "tableName": "rec_tmall_sales_forecast_feature", "refColumns": null, "schemaName": "SalesPredictModule", "tableAliasName": "recTmallSalesForecastFeature"}]';
+END;
+CREATE OR REPLACE PACKAGE BODY "SalesPredictModule"."pkg_rec_tmall_sales_forecast_feature" AS
+
+	/**
+	* @Description 保存主子表表单数据 (已发布RESTful:/SalesPredictModule/rec_tmall_sales_forecast_feature/add)
+	* @param jsonData JSONB 结构化的表单数据对象,格式为：{"param1": "value1","param2": "value2"} 如想要取某个值，可以使用jsonData->>'param1'
+	* @Return JSONB 返回包含主表id的结构化数据
+	*/
+	FUNCTION add(jsonData jsonb) RETURN JSONB AS
+	DECLARE
+		--生成随机主表id
+		v_id varchar := lower(sys_guid());
+		v_module_code varchar;
+		v_child_data jsonb;
+		v_error_data jsonb;
+	BEGIN
+		v_module_code := COALESCE(trim(jsonData ->> 'moduleCode'), kesplus_platform.session('serviceCode'));
+
+		--设置默认字段的值
+		jsonData := jsonData || jsonb_build_object('id',v_id,'moduleCode',v_module_code);
+
+		--对主表表单数据进行校验,包括业务表字段的非空和字段长度
+		call kesplus_platform.crud.check_columns('SalesPredictModule','rec_tmall_sales_forecast_feature',jsonData,ALIAS_DEFINITION);
+
+		--保存主表数据
+		INSERT INTO SalesPredictModule.rec_tmall_sales_forecast_feature(				"id", 
+			"module_code", 
+			"item_id", 
+			"anchor_date", 
+			"category", 
+			"brand_id", 
+			"seller_id", 
+			"click_cnt_1d", 
+			"click_uv_1d", 
+			"click_avg_1d", 
+			"click_is_zero_1d", 
+			"click_cnt_3d", 
+			"click_uv_3d", 
+			"click_avg_3d", 
+			"click_is_zero_3d", 
+			"click_cnt_7d", 
+			"click_uv_7d", 
+			"click_avg_7d", 
+			"click_is_zero_7d", 
+			"click_cnt_14d", 
+			"click_uv_14d", 
+			"click_avg_14d", 
+			"click_is_zero_14d", 
+			"click_cnt_30d", 
+			"click_uv_30d", 
+			"click_avg_30d", 
+			"click_is_zero_30d", 
+			"collect_cnt_1d", 
+			"collect_uv_1d", 
+			"collect_avg_1d", 
+			"collect_is_zero_1d", 
+			"collect_cnt_3d", 
+			"collect_uv_3d", 
+			"collect_avg_3d", 
+			"collect_is_zero_3d", 
+			"collect_cnt_7d", 
+			"collect_uv_7d", 
+			"collect_avg_7d", 
+			"collect_is_zero_7d", 
+			"collect_cnt_14d", 
+			"collect_uv_14d", 
+			"collect_avg_14d", 
+			"collect_is_zero_14d", 
+			"collect_cnt_30d", 
+			"collect_uv_30d", 
+			"collect_avg_30d", 
+			"collect_is_zero_30d", 
+			"cart_cnt_1d", 
+			"cart_uv_1d", 
+			"cart_avg_1d", 
+			"cart_is_zero_1d", 
+			"cart_cnt_3d", 
+			"cart_uv_3d", 
+			"cart_avg_3d", 
+			"cart_is_zero_3d", 
+			"cart_cnt_7d", 
+			"cart_uv_7d", 
+			"cart_avg_7d", 
+			"cart_is_zero_7d", 
+			"cart_cnt_14d", 
+			"cart_uv_14d", 
+			"cart_avg_14d", 
+			"cart_is_zero_14d", 
+			"cart_cnt_30d", 
+			"cart_uv_30d", 
+			"cart_avg_30d", 
+			"cart_is_zero_30d", 
+			"pay_cnt_1d", 
+			"pay_uv_1d", 
+			"pay_avg_1d", 
+			"pay_is_zero_1d", 
+			"pay_cnt_3d", 
+			"pay_uv_3d", 
+			"pay_avg_3d", 
+			"pay_is_zero_3d", 
+			"pay_cnt_7d", 
+			"pay_uv_7d", 
+			"pay_avg_7d", 
+			"pay_is_zero_7d", 
+			"pay_cnt_14d", 
+			"pay_uv_14d", 
+			"pay_avg_14d", 
+			"pay_is_zero_14d", 
+			"pay_cnt_30d", 
+			"pay_uv_30d", 
+			"pay_avg_30d", 
+			"pay_is_zero_30d", 
+			"click_cnt_prev_7d", 
+			"pay_cnt_prev_7d", 
+			"cart_cnt_prev_7d", 
+			"click_cnt_prev_14d", 
+			"pay_cnt_prev_14d", 
+			"pay_per_click_7d", 
+			"cart_per_click_7d", 
+			"collect_per_click_7d", 
+			"pay_uv_per_click_uv_7d", 
+			"pay_ratio_3d_to_7d", 
+			"pay_ratio_7d_to_14d", 
+			"click_cnt_delta_7d", 
+			"pay_cnt_delta_7d", 
+			"cart_cnt_delta_7d", 
+			"pay_cnt_delta_14d", 
+			"click_cnt_delta_14d", 
+			"pay_mean_7d", 
+			"pay_mean_14d", 
+			"pay_mean_30d", 
+			"pay_std_7d", 
+			"pay_std_14d", 
+			"pay_std_30d", 
+			"pay_max_7d", 
+			"pay_max_14d", 
+			"pay_max_30d", 
+			"click_mean_7d", 
+			"click_mean_14d", 
+			"click_mean_30d", 
+			"click_std_7d", 
+			"click_std_14d", 
+			"click_std_30d", 
+			"pay_active_days_30d", 
+			"active_days_30d", 
+			"days_since_last_click", 
+			"days_since_last_pay", 
+			"cumulative_active_days", 
+			"cumulative_pay_days", 
+			"item_age_days", 
+			"day_of_week", 
+			"is_weekend", 
+			"day_of_month", 
+			"month", 
+			"dept_id")VALUES(				trim(jsonData->>'id')  , 
+			COALESCE(jsonData->>'moduleCode', kesplus_platform.session('moduleCode'), kesplus_platform.session('serviceCode')), 
+			trim(jsonData->>'itemId')::bigint , 
+			trim(jsonData->>'anchorDate')::date , 
+			trim(jsonData->>'category')  , 
+			trim(jsonData->>'brandId')  , 
+			trim(jsonData->>'sellerId')  , 
+			trim(jsonData->>'clickCnt1D')::integer , 
+			trim(jsonData->>'clickUv1D')::integer , 
+			trim(jsonData->>'clickAvg1D')::double precision , 
+			trim(jsonData->>'clickIsZero1D')::integer , 
+			trim(jsonData->>'clickCnt3D')::integer , 
+			trim(jsonData->>'clickUv3D')::integer , 
+			trim(jsonData->>'clickAvg3D')::double precision , 
+			trim(jsonData->>'clickIsZero3D')::integer , 
+			trim(jsonData->>'clickCnt7D')::integer , 
+			trim(jsonData->>'clickUv7D')::integer , 
+			trim(jsonData->>'clickAvg7D')::double precision , 
+			trim(jsonData->>'clickIsZero7D')::integer , 
+			trim(jsonData->>'clickCnt14D')::integer , 
+			trim(jsonData->>'clickUv14D')::integer , 
+			trim(jsonData->>'clickAvg14D')::double precision , 
+			trim(jsonData->>'clickIsZero14D')::integer , 
+			trim(jsonData->>'clickCnt30D')::integer , 
+			trim(jsonData->>'clickUv30D')::integer , 
+			trim(jsonData->>'clickAvg30D')::double precision , 
+			trim(jsonData->>'clickIsZero30D')::integer , 
+			trim(jsonData->>'collectCnt1D')::integer , 
+			trim(jsonData->>'collectUv1D')::integer , 
+			trim(jsonData->>'collectAvg1D')::double precision , 
+			trim(jsonData->>'collectIsZero1D')::integer , 
+			trim(jsonData->>'collectCnt3D')::integer , 
+			trim(jsonData->>'collectUv3D')::integer , 
+			trim(jsonData->>'collectAvg3D')::double precision , 
+			trim(jsonData->>'collectIsZero3D')::integer , 
+			trim(jsonData->>'collectCnt7D')::integer , 
+			trim(jsonData->>'collectUv7D')::integer , 
+			trim(jsonData->>'collectAvg7D')::double precision , 
+			trim(jsonData->>'collectIsZero7D')::integer , 
+			trim(jsonData->>'collectCnt14D')::integer , 
+			trim(jsonData->>'collectUv14D')::integer , 
+			trim(jsonData->>'collectAvg14D')::double precision , 
+			trim(jsonData->>'collectIsZero14D')::integer , 
+			trim(jsonData->>'collectCnt30D')::integer , 
+			trim(jsonData->>'collectUv30D')::integer , 
+			trim(jsonData->>'collectAvg30D')::double precision , 
+			trim(jsonData->>'collectIsZero30D')::integer , 
+			trim(jsonData->>'cartCnt1D')::integer , 
+			trim(jsonData->>'cartUv1D')::integer , 
+			trim(jsonData->>'cartAvg1D')::double precision , 
+			trim(jsonData->>'cartIsZero1D')::integer , 
+			trim(jsonData->>'cartCnt3D')::integer , 
+			trim(jsonData->>'cartUv3D')::integer , 
+			trim(jsonData->>'cartAvg3D')::double precision , 
+			trim(jsonData->>'cartIsZero3D')::integer , 
+			trim(jsonData->>'cartCnt7D')::integer , 
+			trim(jsonData->>'cartUv7D')::integer , 
+			trim(jsonData->>'cartAvg7D')::double precision , 
+			trim(jsonData->>'cartIsZero7D')::integer , 
+			trim(jsonData->>'cartCnt14D')::integer , 
+			trim(jsonData->>'cartUv14D')::integer , 
+			trim(jsonData->>'cartAvg14D')::double precision , 
+			trim(jsonData->>'cartIsZero14D')::integer , 
+			trim(jsonData->>'cartCnt30D')::integer , 
+			trim(jsonData->>'cartUv30D')::integer , 
+			trim(jsonData->>'cartAvg30D')::double precision , 
+			trim(jsonData->>'cartIsZero30D')::integer , 
+			trim(jsonData->>'payCnt1D')::integer , 
+			trim(jsonData->>'payUv1D')::integer , 
+			trim(jsonData->>'payAvg1D')::double precision , 
+			trim(jsonData->>'payIsZero1D')::integer , 
+			trim(jsonData->>'payCnt3D')::integer , 
+			trim(jsonData->>'payUv3D')::integer , 
+			trim(jsonData->>'payAvg3D')::double precision , 
+			trim(jsonData->>'payIsZero3D')::integer , 
+			trim(jsonData->>'payCnt7D')::integer , 
+			trim(jsonData->>'payUv7D')::integer , 
+			trim(jsonData->>'payAvg7D')::double precision , 
+			trim(jsonData->>'payIsZero7D')::integer , 
+			trim(jsonData->>'payCnt14D')::integer , 
+			trim(jsonData->>'payUv14D')::integer , 
+			trim(jsonData->>'payAvg14D')::double precision , 
+			trim(jsonData->>'payIsZero14D')::integer , 
+			trim(jsonData->>'payCnt30D')::integer , 
+			trim(jsonData->>'payUv30D')::integer , 
+			trim(jsonData->>'payAvg30D')::double precision , 
+			trim(jsonData->>'payIsZero30D')::integer , 
+			trim(jsonData->>'clickCntPrev7D')::integer , 
+			trim(jsonData->>'payCntPrev7D')::integer , 
+			trim(jsonData->>'cartCntPrev7D')::integer , 
+			trim(jsonData->>'clickCntPrev14D')::integer , 
+			trim(jsonData->>'payCntPrev14D')::integer , 
+			trim(jsonData->>'payPerClick7D')::double precision , 
+			trim(jsonData->>'cartPerClick7D')::double precision , 
+			trim(jsonData->>'collectPerClick7D')::double precision , 
+			trim(jsonData->>'payUvPerClickUv7D')::double precision , 
+			trim(jsonData->>'payRatio3DTo7D')::double precision , 
+			trim(jsonData->>'payRatio7DTo14D')::double precision , 
+			trim(jsonData->>'clickCntDelta7D')::integer , 
+			trim(jsonData->>'payCntDelta7D')::integer , 
+			trim(jsonData->>'cartCntDelta7D')::integer , 
+			trim(jsonData->>'payCntDelta14D')::integer , 
+			trim(jsonData->>'clickCntDelta14D')::integer , 
+			trim(jsonData->>'payMean7D')::double precision , 
+			trim(jsonData->>'payMean14D')::double precision , 
+			trim(jsonData->>'payMean30D')::double precision , 
+			trim(jsonData->>'payStd7D')::double precision , 
+			trim(jsonData->>'payStd14D')::double precision , 
+			trim(jsonData->>'payStd30D')::double precision , 
+			trim(jsonData->>'payMax7D')::double precision , 
+			trim(jsonData->>'payMax14D')::double precision , 
+			trim(jsonData->>'payMax30D')::double precision , 
+			trim(jsonData->>'clickMean7D')::double precision , 
+			trim(jsonData->>'clickMean14D')::double precision , 
+			trim(jsonData->>'clickMean30D')::double precision , 
+			trim(jsonData->>'clickStd7D')::double precision , 
+			trim(jsonData->>'clickStd14D')::double precision , 
+			trim(jsonData->>'clickStd30D')::double precision , 
+			trim(jsonData->>'payActiveDays30D')::integer , 
+			trim(jsonData->>'activeDays30D')::integer , 
+			trim(jsonData->>'daysSinceLastClick')::integer , 
+			trim(jsonData->>'daysSinceLastPay')::integer , 
+			trim(jsonData->>'cumulativeActiveDays')::integer , 
+			trim(jsonData->>'cumulativePayDays')::integer , 
+			trim(jsonData->>'itemAgeDays')::integer , 
+			trim(jsonData->>'dayOfWeek')::integer , 
+			trim(jsonData->>'isWeekend')::integer , 
+			trim(jsonData->>'dayOfMonth')::integer , 
+			trim(jsonData->>'month')::integer , 
+			COALESCE(kesplus_platform.USER('deptId'), trim(jsonData->>'deptId')));
+
+
+		--调用工作流处理逻辑
+		--CALL "kesplus_workflow"."pkg_kesplus_process_api".execute_process(jsonData,'SalesPredictModule.pkg_rec_tmall_sales_forecast_feature.workflowCallback');
+
+		--返回主子表结构化数据
+		RETURN get_by_id(v_id);
+		EXCEPTION
+			WHEN OTHERS THEN
+		 		v_error_data :=kesplus_platform.EXCEPTION.errdata(SQLSTATE);
+				kesplus_platform.business_exception(v_error_data->>'code',v_error_data->>'msg');
+	END add;
+
+
+	/**
+	* @Description 更新主子表数据 (已发布RESTful:/SalesPredictModule/rec_tmall_sales_forecast_feature/update)
+	* @param jsonData JSONB 结构化的表单数据对象 格式为：{"param1": "value1","param2": "value2"} 如想要取某个值，可以使用jsonData->>'param1'
+	* @Return JSONB 返回包含主表id的结构化数据
+	*/
+	FUNCTION update(jsonData jsonb) RETURN JSONB AS
+	DECLARE
+		v_child_data jsonb;
+		v_exist_child_ids TEXT[];
+		v_exist_child_id TEXT;
+		v_error_data jsonb;
+	BEGIN
+
+		--对主表表单数据进行校验,包括业务表字段的非空和字段长度
+		call kesplus_platform.crud.check_columns('SalesPredictModule','rec_tmall_sales_forecast_feature',jsonData,ALIAS_DEFINITION);
+
+		--更新主表数据,若表中含有更新人id和更新时间字段,则自动更新
+		UPDATE
+            SalesPredictModule.rec_tmall_sales_forecast_feature
+        SET
+			item_id = trim(jsonData->>'itemId')::bigint , 			anchor_date = trim(jsonData->>'anchorDate')::date , 			category = trim(jsonData->>'category')  , 			brand_id = trim(jsonData->>'brandId')  , 			seller_id = trim(jsonData->>'sellerId')  , 			click_cnt_1d = trim(jsonData->>'clickCnt1D')::integer , 			click_uv_1d = trim(jsonData->>'clickUv1D')::integer , 			click_avg_1d = trim(jsonData->>'clickAvg1D')::double precision , 			click_is_zero_1d = trim(jsonData->>'clickIsZero1D')::integer , 			click_cnt_3d = trim(jsonData->>'clickCnt3D')::integer , 			click_uv_3d = trim(jsonData->>'clickUv3D')::integer , 			click_avg_3d = trim(jsonData->>'clickAvg3D')::double precision , 			click_is_zero_3d = trim(jsonData->>'clickIsZero3D')::integer , 			click_cnt_7d = trim(jsonData->>'clickCnt7D')::integer , 			click_uv_7d = trim(jsonData->>'clickUv7D')::integer , 			click_avg_7d = trim(jsonData->>'clickAvg7D')::double precision , 			click_is_zero_7d = trim(jsonData->>'clickIsZero7D')::integer , 			click_cnt_14d = trim(jsonData->>'clickCnt14D')::integer , 			click_uv_14d = trim(jsonData->>'clickUv14D')::integer , 			click_avg_14d = trim(jsonData->>'clickAvg14D')::double precision , 			click_is_zero_14d = trim(jsonData->>'clickIsZero14D')::integer , 			click_cnt_30d = trim(jsonData->>'clickCnt30D')::integer , 			click_uv_30d = trim(jsonData->>'clickUv30D')::integer , 			click_avg_30d = trim(jsonData->>'clickAvg30D')::double precision , 			click_is_zero_30d = trim(jsonData->>'clickIsZero30D')::integer , 			collect_cnt_1d = trim(jsonData->>'collectCnt1D')::integer , 			collect_uv_1d = trim(jsonData->>'collectUv1D')::integer , 			collect_avg_1d = trim(jsonData->>'collectAvg1D')::double precision , 			collect_is_zero_1d = trim(jsonData->>'collectIsZero1D')::integer , 			collect_cnt_3d = trim(jsonData->>'collectCnt3D')::integer , 			collect_uv_3d = trim(jsonData->>'collectUv3D')::integer , 			collect_avg_3d = trim(jsonData->>'collectAvg3D')::double precision , 			collect_is_zero_3d = trim(jsonData->>'collectIsZero3D')::integer , 			collect_cnt_7d = trim(jsonData->>'collectCnt7D')::integer , 			collect_uv_7d = trim(jsonData->>'collectUv7D')::integer , 			collect_avg_7d = trim(jsonData->>'collectAvg7D')::double precision , 			collect_is_zero_7d = trim(jsonData->>'collectIsZero7D')::integer , 			collect_cnt_14d = trim(jsonData->>'collectCnt14D')::integer , 			collect_uv_14d = trim(jsonData->>'collectUv14D')::integer , 			collect_avg_14d = trim(jsonData->>'collectAvg14D')::double precision , 			collect_is_zero_14d = trim(jsonData->>'collectIsZero14D')::integer , 			collect_cnt_30d = trim(jsonData->>'collectCnt30D')::integer , 			collect_uv_30d = trim(jsonData->>'collectUv30D')::integer , 			collect_avg_30d = trim(jsonData->>'collectAvg30D')::double precision , 			collect_is_zero_30d = trim(jsonData->>'collectIsZero30D')::integer , 			cart_cnt_1d = trim(jsonData->>'cartCnt1D')::integer , 			cart_uv_1d = trim(jsonData->>'cartUv1D')::integer , 			cart_avg_1d = trim(jsonData->>'cartAvg1D')::double precision , 			cart_is_zero_1d = trim(jsonData->>'cartIsZero1D')::integer , 			cart_cnt_3d = trim(jsonData->>'cartCnt3D')::integer , 			cart_uv_3d = trim(jsonData->>'cartUv3D')::integer , 			cart_avg_3d = trim(jsonData->>'cartAvg3D')::double precision , 			cart_is_zero_3d = trim(jsonData->>'cartIsZero3D')::integer , 			cart_cnt_7d = trim(jsonData->>'cartCnt7D')::integer , 			cart_uv_7d = trim(jsonData->>'cartUv7D')::integer , 			cart_avg_7d = trim(jsonData->>'cartAvg7D')::double precision , 			cart_is_zero_7d = trim(jsonData->>'cartIsZero7D')::integer , 			cart_cnt_14d = trim(jsonData->>'cartCnt14D')::integer , 			cart_uv_14d = trim(jsonData->>'cartUv14D')::integer , 			cart_avg_14d = trim(jsonData->>'cartAvg14D')::double precision , 			cart_is_zero_14d = trim(jsonData->>'cartIsZero14D')::integer , 			cart_cnt_30d = trim(jsonData->>'cartCnt30D')::integer , 			cart_uv_30d = trim(jsonData->>'cartUv30D')::integer , 			cart_avg_30d = trim(jsonData->>'cartAvg30D')::double precision , 			cart_is_zero_30d = trim(jsonData->>'cartIsZero30D')::integer , 			pay_cnt_1d = trim(jsonData->>'payCnt1D')::integer , 			pay_uv_1d = trim(jsonData->>'payUv1D')::integer , 			pay_avg_1d = trim(jsonData->>'payAvg1D')::double precision , 			pay_is_zero_1d = trim(jsonData->>'payIsZero1D')::integer , 			pay_cnt_3d = trim(jsonData->>'payCnt3D')::integer , 			pay_uv_3d = trim(jsonData->>'payUv3D')::integer , 			pay_avg_3d = trim(jsonData->>'payAvg3D')::double precision , 			pay_is_zero_3d = trim(jsonData->>'payIsZero3D')::integer , 			pay_cnt_7d = trim(jsonData->>'payCnt7D')::integer , 			pay_uv_7d = trim(jsonData->>'payUv7D')::integer , 			pay_avg_7d = trim(jsonData->>'payAvg7D')::double precision , 			pay_is_zero_7d = trim(jsonData->>'payIsZero7D')::integer , 			pay_cnt_14d = trim(jsonData->>'payCnt14D')::integer , 			pay_uv_14d = trim(jsonData->>'payUv14D')::integer , 			pay_avg_14d = trim(jsonData->>'payAvg14D')::double precision , 			pay_is_zero_14d = trim(jsonData->>'payIsZero14D')::integer , 			pay_cnt_30d = trim(jsonData->>'payCnt30D')::integer , 			pay_uv_30d = trim(jsonData->>'payUv30D')::integer , 			pay_avg_30d = trim(jsonData->>'payAvg30D')::double precision , 			pay_is_zero_30d = trim(jsonData->>'payIsZero30D')::integer , 			click_cnt_prev_7d = trim(jsonData->>'clickCntPrev7D')::integer , 			pay_cnt_prev_7d = trim(jsonData->>'payCntPrev7D')::integer , 			cart_cnt_prev_7d = trim(jsonData->>'cartCntPrev7D')::integer , 			click_cnt_prev_14d = trim(jsonData->>'clickCntPrev14D')::integer , 			pay_cnt_prev_14d = trim(jsonData->>'payCntPrev14D')::integer , 			pay_per_click_7d = trim(jsonData->>'payPerClick7D')::double precision , 			cart_per_click_7d = trim(jsonData->>'cartPerClick7D')::double precision , 			collect_per_click_7d = trim(jsonData->>'collectPerClick7D')::double precision , 			pay_uv_per_click_uv_7d = trim(jsonData->>'payUvPerClickUv7D')::double precision , 			pay_ratio_3d_to_7d = trim(jsonData->>'payRatio3DTo7D')::double precision , 			pay_ratio_7d_to_14d = trim(jsonData->>'payRatio7DTo14D')::double precision , 			click_cnt_delta_7d = trim(jsonData->>'clickCntDelta7D')::integer , 			pay_cnt_delta_7d = trim(jsonData->>'payCntDelta7D')::integer , 			cart_cnt_delta_7d = trim(jsonData->>'cartCntDelta7D')::integer , 			pay_cnt_delta_14d = trim(jsonData->>'payCntDelta14D')::integer , 			click_cnt_delta_14d = trim(jsonData->>'clickCntDelta14D')::integer , 			pay_mean_7d = trim(jsonData->>'payMean7D')::double precision , 			pay_mean_14d = trim(jsonData->>'payMean14D')::double precision , 			pay_mean_30d = trim(jsonData->>'payMean30D')::double precision , 			pay_std_7d = trim(jsonData->>'payStd7D')::double precision , 			pay_std_14d = trim(jsonData->>'payStd14D')::double precision , 			pay_std_30d = trim(jsonData->>'payStd30D')::double precision , 			pay_max_7d = trim(jsonData->>'payMax7D')::double precision , 			pay_max_14d = trim(jsonData->>'payMax14D')::double precision , 			pay_max_30d = trim(jsonData->>'payMax30D')::double precision , 			click_mean_7d = trim(jsonData->>'clickMean7D')::double precision , 			click_mean_14d = trim(jsonData->>'clickMean14D')::double precision , 			click_mean_30d = trim(jsonData->>'clickMean30D')::double precision , 			click_std_7d = trim(jsonData->>'clickStd7D')::double precision , 			click_std_14d = trim(jsonData->>'clickStd14D')::double precision , 			click_std_30d = trim(jsonData->>'clickStd30D')::double precision , 			pay_active_days_30d = trim(jsonData->>'payActiveDays30D')::integer , 			active_days_30d = trim(jsonData->>'activeDays30D')::integer , 			days_since_last_click = trim(jsonData->>'daysSinceLastClick')::integer , 			days_since_last_pay = trim(jsonData->>'daysSinceLastPay')::integer , 			cumulative_active_days = trim(jsonData->>'cumulativeActiveDays')::integer , 			cumulative_pay_days = trim(jsonData->>'cumulativePayDays')::integer , 			item_age_days = trim(jsonData->>'itemAgeDays')::integer , 			day_of_week = trim(jsonData->>'dayOfWeek')::integer , 			is_weekend = trim(jsonData->>'isWeekend')::integer , 			day_of_month = trim(jsonData->>'dayOfMonth')::integer , 			month = trim(jsonData->>'month')::integer 
+        WHERE
+            id = trim(jsonData->>'id');
+
+		--调用工作流处理逻辑
+		--call "kesplus_workflow"."pkg_kesplus_process_api".execute_process(jsonData::jsonb,'SalesPredictModule.pkg_rec_tmall_sales_forecast_feature.workflowCallback');
+
+		--返回主子表结构化数据
+		RETURN get_by_id(jsonData->>'id');
+		EXCEPTION
+			WHEN OTHERS THEN
+		 		v_error_data :=kesplus_platform.EXCEPTION.errdata(SQLSTATE);
+				kesplus_platform.business_exception(v_error_data->>'code',v_error_data->>'msg');
+	END update;
+
+	/**
+	* @Description 删除（支持批量删除） (已发布RESTful:/SalesPredictModule/rec_tmall_sales_forecast_feature/del)
+	* @param ids 主键，多个id使用逗号分隔
+	* @Return
+	*/
+	PROCEDURE del(ids varchar) AS
+	DECLARE
+		v_id varchar;
+		v_data jsonb;
+		v_error_data jsonb;
+		v_execute_delete_sql text;
+	BEGIN
+		IF trim(ids) IS NULL THEN
+			RAISE EXCEPTION '请选择删除数据!';
+		END IF;
+		
+
+		--删除主表数据
+		DELETE FROM SalesPredictModule.rec_tmall_sales_forecast_feature WHERE id IN (select regexp_split_to_table(ids,','));
+		EXCEPTION
+			WHEN OTHERS THEN
+		 		v_error_data :=kesplus_platform.EXCEPTION.errdata(SQLSTATE);
+				kesplus_platform.business_exception(v_error_data->>'code',v_error_data->>'msg');
+	END del;
+
+	/**
+	* @Description 根据主键查询详情 (已发布RESTful:/SalesPredictModule/rec_tmall_sales_forecast_feature/detail)
+	* @param id_ 主键
+	* @Return json
+	*/
+	FUNCTION get_by_id(id varchar) RETURNS JSONB AS
+	DECLARE
+		v_result_json jsonb;
+		v_execute_get_query_sql text;
+	BEGIN
+		IF trim(id) IS NULL THEN
+			RAISE EXCEPTION 'id不能为空';
+		END IF;
+
+		--查询语句,其中查询条件和排序规则使用占位符
+		v_execute_get_query_sql :='
+            SELECT t1.* 
+            /*查询主表数据*/
+            from (
+                SELECT 					ROWNUM AS "rn",
+					t1.id as id,					t1.item_id as itemId,					t1.anchor_date as anchorDate,					t1.category as category,					t1.brand_id as brandId,					t1.seller_id as sellerId,					t1.click_cnt_1d as clickCnt1D,					t1.click_uv_1d as clickUv1D,					t1.click_avg_1d as clickAvg1D,					t1.click_is_zero_1d as clickIsZero1D,					t1.click_cnt_3d as clickCnt3D,					t1.click_uv_3d as clickUv3D,					t1.click_avg_3d as clickAvg3D,					t1.click_is_zero_3d as clickIsZero3D,					t1.click_cnt_7d as clickCnt7D,					t1.click_uv_7d as clickUv7D,					t1.click_avg_7d as clickAvg7D,					t1.click_is_zero_7d as clickIsZero7D,					t1.click_cnt_14d as clickCnt14D,					t1.click_uv_14d as clickUv14D,					t1.click_avg_14d as clickAvg14D,					t1.click_is_zero_14d as clickIsZero14D,					t1.click_cnt_30d as clickCnt30D,					t1.click_uv_30d as clickUv30D,					t1.click_avg_30d as clickAvg30D,					t1.click_is_zero_30d as clickIsZero30D,					t1.collect_cnt_1d as collectCnt1D,					t1.collect_uv_1d as collectUv1D,					t1.collect_avg_1d as collectAvg1D,					t1.collect_is_zero_1d as collectIsZero1D,					t1.collect_cnt_3d as collectCnt3D,					t1.collect_uv_3d as collectUv3D,					t1.collect_avg_3d as collectAvg3D,					t1.collect_is_zero_3d as collectIsZero3D,					t1.collect_cnt_7d as collectCnt7D,					t1.collect_uv_7d as collectUv7D,					t1.collect_avg_7d as collectAvg7D,					t1.collect_is_zero_7d as collectIsZero7D,					t1.collect_cnt_14d as collectCnt14D,					t1.collect_uv_14d as collectUv14D,					t1.collect_avg_14d as collectAvg14D,					t1.collect_is_zero_14d as collectIsZero14D,					t1.collect_cnt_30d as collectCnt30D,					t1.collect_uv_30d as collectUv30D,					t1.collect_avg_30d as collectAvg30D,					t1.collect_is_zero_30d as collectIsZero30D,					t1.cart_cnt_1d as cartCnt1D,					t1.cart_uv_1d as cartUv1D,					t1.cart_avg_1d as cartAvg1D,					t1.cart_is_zero_1d as cartIsZero1D,					t1.cart_cnt_3d as cartCnt3D,					t1.cart_uv_3d as cartUv3D,					t1.cart_avg_3d as cartAvg3D,					t1.cart_is_zero_3d as cartIsZero3D,					t1.cart_cnt_7d as cartCnt7D,					t1.cart_uv_7d as cartUv7D,					t1.cart_avg_7d as cartAvg7D,					t1.cart_is_zero_7d as cartIsZero7D,					t1.cart_cnt_14d as cartCnt14D,					t1.cart_uv_14d as cartUv14D,					t1.cart_avg_14d as cartAvg14D,					t1.cart_is_zero_14d as cartIsZero14D,					t1.cart_cnt_30d as cartCnt30D,					t1.cart_uv_30d as cartUv30D,					t1.cart_avg_30d as cartAvg30D,					t1.cart_is_zero_30d as cartIsZero30D,					t1.pay_cnt_1d as payCnt1D,					t1.pay_uv_1d as payUv1D,					t1.pay_avg_1d as payAvg1D,					t1.pay_is_zero_1d as payIsZero1D,					t1.pay_cnt_3d as payCnt3D,					t1.pay_uv_3d as payUv3D,					t1.pay_avg_3d as payAvg3D,					t1.pay_is_zero_3d as payIsZero3D,					t1.pay_cnt_7d as payCnt7D,					t1.pay_uv_7d as payUv7D,					t1.pay_avg_7d as payAvg7D,					t1.pay_is_zero_7d as payIsZero7D,					t1.pay_cnt_14d as payCnt14D,					t1.pay_uv_14d as payUv14D,					t1.pay_avg_14d as payAvg14D,					t1.pay_is_zero_14d as payIsZero14D,					t1.pay_cnt_30d as payCnt30D,					t1.pay_uv_30d as payUv30D,					t1.pay_avg_30d as payAvg30D,					t1.pay_is_zero_30d as payIsZero30D,					t1.click_cnt_prev_7d as clickCntPrev7D,					t1.pay_cnt_prev_7d as payCntPrev7D,					t1.cart_cnt_prev_7d as cartCntPrev7D,					t1.click_cnt_prev_14d as clickCntPrev14D,					t1.pay_cnt_prev_14d as payCntPrev14D,					t1.pay_per_click_7d as payPerClick7D,					t1.cart_per_click_7d as cartPerClick7D,					t1.collect_per_click_7d as collectPerClick7D,					t1.pay_uv_per_click_uv_7d as payUvPerClickUv7D,					t1.pay_ratio_3d_to_7d as payRatio3DTo7D,					t1.pay_ratio_7d_to_14d as payRatio7DTo14D,					t1.click_cnt_delta_7d as clickCntDelta7D,					t1.pay_cnt_delta_7d as payCntDelta7D,					t1.cart_cnt_delta_7d as cartCntDelta7D,					t1.pay_cnt_delta_14d as payCntDelta14D,					t1.click_cnt_delta_14d as clickCntDelta14D,					t1.pay_mean_7d as payMean7D,					t1.pay_mean_14d as payMean14D,					t1.pay_mean_30d as payMean30D,					t1.pay_std_7d as payStd7D,					t1.pay_std_14d as payStd14D,					t1.pay_std_30d as payStd30D,					t1.pay_max_7d as payMax7D,					t1.pay_max_14d as payMax14D,					t1.pay_max_30d as payMax30D,					t1.click_mean_7d as clickMean7D,					t1.click_mean_14d as clickMean14D,					t1.click_mean_30d as clickMean30D,					t1.click_std_7d as clickStd7D,					t1.click_std_14d as clickStd14D,					t1.click_std_30d as clickStd30D,					t1.pay_active_days_30d as payActiveDays30D,					t1.active_days_30d as activeDays30D,					t1.days_since_last_click as daysSinceLastClick,					t1.days_since_last_pay as daysSinceLastPay,					t1.cumulative_active_days as cumulativeActiveDays,					t1.cumulative_pay_days as cumulativePayDays,					t1.item_age_days as itemAgeDays,					t1.day_of_week as dayOfWeek,					t1.is_weekend as isWeekend,					t1.day_of_month as dayOfMonth,					t1.month as month 
+				FROM SalesPredictModule.rec_tmall_sales_forecast_feature t1
+				%s
+            ) as t1 
+            %s
+        ';
+
+		--进行详细查询，结果为json对象形式
+		EXECUTE kesplus_platform.json.object_sql(format(v_execute_get_query_sql,format('where "t1"."id" = %L',id),'')) INTO v_result_json;
+
+		RETURN v_result_json;
+
+		EXCEPTION
+			WHEN NO_DATA_FOUND THEN
+				RETURN NULL;
+	END get_by_id;
+
+	/**
+	* @Description 列表查询  (已发布RESTful:/SalesPredictModule/rec_tmall_sales_forecast_feature/list)
+	* @param jsonData json信息查询条件
+	* @Return json
+	*/
+	FUNCTION list(jsonData jsonb) RETURNS JSONB AS
+	DECLARE
+		v_condition_sql text;
+		v_orderby_sql text;
+		v_result_json jsonb;
+		v_error_data jsonb;
+		v_execute_list_query_sql text;
+	BEGIN
+		--构建查询条件
+		v_condition_sql := 'where '|| kesplus_platform.search_model.getConditionSql(jsonData, CONDITIONS);
+
+		--构建排序规则
+		v_orderby_sql := "kesplus_platform"."utils".get_order_by_sql(jsonData ->> 'orderColumns');
+
+		--查询语句，其中查询条件和排序规则使用占位符
+		v_execute_list_query_sql :='
+            SELECT t1.* 
+            /*查询主表数据*/
+            from (
+                SELECT 					ROWNUM AS "rn",
+					t1.id as id,					t1.item_id as itemId,					t1.anchor_date as anchorDate,					t1.category as category,					t1.brand_id as brandId,					t1.seller_id as sellerId,					t1.click_cnt_1d as clickCnt1D,					t1.click_uv_1d as clickUv1D,					t1.click_avg_1d as clickAvg1D,					t1.click_is_zero_1d as clickIsZero1D,					t1.click_cnt_3d as clickCnt3D,					t1.click_uv_3d as clickUv3D,					t1.click_avg_3d as clickAvg3D,					t1.click_is_zero_3d as clickIsZero3D,					t1.click_cnt_7d as clickCnt7D,					t1.click_uv_7d as clickUv7D,					t1.click_avg_7d as clickAvg7D,					t1.click_is_zero_7d as clickIsZero7D,					t1.click_cnt_14d as clickCnt14D,					t1.click_uv_14d as clickUv14D,					t1.click_avg_14d as clickAvg14D,					t1.click_is_zero_14d as clickIsZero14D,					t1.click_cnt_30d as clickCnt30D,					t1.click_uv_30d as clickUv30D,					t1.click_avg_30d as clickAvg30D,					t1.click_is_zero_30d as clickIsZero30D,					t1.collect_cnt_1d as collectCnt1D,					t1.collect_uv_1d as collectUv1D,					t1.collect_avg_1d as collectAvg1D,					t1.collect_is_zero_1d as collectIsZero1D,					t1.collect_cnt_3d as collectCnt3D,					t1.collect_uv_3d as collectUv3D,					t1.collect_avg_3d as collectAvg3D,					t1.collect_is_zero_3d as collectIsZero3D,					t1.collect_cnt_7d as collectCnt7D,					t1.collect_uv_7d as collectUv7D,					t1.collect_avg_7d as collectAvg7D,					t1.collect_is_zero_7d as collectIsZero7D,					t1.collect_cnt_14d as collectCnt14D,					t1.collect_uv_14d as collectUv14D,					t1.collect_avg_14d as collectAvg14D,					t1.collect_is_zero_14d as collectIsZero14D,					t1.collect_cnt_30d as collectCnt30D,					t1.collect_uv_30d as collectUv30D,					t1.collect_avg_30d as collectAvg30D,					t1.collect_is_zero_30d as collectIsZero30D,					t1.cart_cnt_1d as cartCnt1D,					t1.cart_uv_1d as cartUv1D,					t1.cart_avg_1d as cartAvg1D,					t1.cart_is_zero_1d as cartIsZero1D,					t1.cart_cnt_3d as cartCnt3D,					t1.cart_uv_3d as cartUv3D,					t1.cart_avg_3d as cartAvg3D,					t1.cart_is_zero_3d as cartIsZero3D,					t1.cart_cnt_7d as cartCnt7D,					t1.cart_uv_7d as cartUv7D,					t1.cart_avg_7d as cartAvg7D,					t1.cart_is_zero_7d as cartIsZero7D,					t1.cart_cnt_14d as cartCnt14D,					t1.cart_uv_14d as cartUv14D,					t1.cart_avg_14d as cartAvg14D,					t1.cart_is_zero_14d as cartIsZero14D,					t1.cart_cnt_30d as cartCnt30D,					t1.cart_uv_30d as cartUv30D,					t1.cart_avg_30d as cartAvg30D,					t1.cart_is_zero_30d as cartIsZero30D,					t1.pay_cnt_1d as payCnt1D,					t1.pay_uv_1d as payUv1D,					t1.pay_avg_1d as payAvg1D,					t1.pay_is_zero_1d as payIsZero1D,					t1.pay_cnt_3d as payCnt3D,					t1.pay_uv_3d as payUv3D,					t1.pay_avg_3d as payAvg3D,					t1.pay_is_zero_3d as payIsZero3D,					t1.pay_cnt_7d as payCnt7D,					t1.pay_uv_7d as payUv7D,					t1.pay_avg_7d as payAvg7D,					t1.pay_is_zero_7d as payIsZero7D,					t1.pay_cnt_14d as payCnt14D,					t1.pay_uv_14d as payUv14D,					t1.pay_avg_14d as payAvg14D,					t1.pay_is_zero_14d as payIsZero14D,					t1.pay_cnt_30d as payCnt30D,					t1.pay_uv_30d as payUv30D,					t1.pay_avg_30d as payAvg30D,					t1.pay_is_zero_30d as payIsZero30D,					t1.click_cnt_prev_7d as clickCntPrev7D,					t1.pay_cnt_prev_7d as payCntPrev7D,					t1.cart_cnt_prev_7d as cartCntPrev7D,					t1.click_cnt_prev_14d as clickCntPrev14D,					t1.pay_cnt_prev_14d as payCntPrev14D,					t1.pay_per_click_7d as payPerClick7D,					t1.cart_per_click_7d as cartPerClick7D,					t1.collect_per_click_7d as collectPerClick7D,					t1.pay_uv_per_click_uv_7d as payUvPerClickUv7D,					t1.pay_ratio_3d_to_7d as payRatio3DTo7D,					t1.pay_ratio_7d_to_14d as payRatio7DTo14D,					t1.click_cnt_delta_7d as clickCntDelta7D,					t1.pay_cnt_delta_7d as payCntDelta7D,					t1.cart_cnt_delta_7d as cartCntDelta7D,					t1.pay_cnt_delta_14d as payCntDelta14D,					t1.click_cnt_delta_14d as clickCntDelta14D,					t1.pay_mean_7d as payMean7D,					t1.pay_mean_14d as payMean14D,					t1.pay_mean_30d as payMean30D,					t1.pay_std_7d as payStd7D,					t1.pay_std_14d as payStd14D,					t1.pay_std_30d as payStd30D,					t1.pay_max_7d as payMax7D,					t1.pay_max_14d as payMax14D,					t1.pay_max_30d as payMax30D,					t1.click_mean_7d as clickMean7D,					t1.click_mean_14d as clickMean14D,					t1.click_mean_30d as clickMean30D,					t1.click_std_7d as clickStd7D,					t1.click_std_14d as clickStd14D,					t1.click_std_30d as clickStd30D,					t1.pay_active_days_30d as payActiveDays30D,					t1.active_days_30d as activeDays30D,					t1.days_since_last_click as daysSinceLastClick,					t1.days_since_last_pay as daysSinceLastPay,					t1.cumulative_active_days as cumulativeActiveDays,					t1.cumulative_pay_days as cumulativePayDays,					t1.item_age_days as itemAgeDays,					t1.day_of_week as dayOfWeek,					t1.is_weekend as isWeekend,					t1.day_of_month as dayOfMonth,					t1.month as month 
+				FROM SalesPredictModule.rec_tmall_sales_forecast_feature t1
+				%s
+            ) as t1 
+            %s
+        ';
+
+		--进行列表查询，结果为json数组形式
+		EXECUTE kesplus_platform.json.array_sql(format(v_execute_list_query_sql,v_condition_sql,nvl(v_orderby_sql,' '))) INTO v_result_json;
+
+		RETURN v_result_json;
+		EXCEPTION
+			WHEN OTHERS THEN
+		 		v_error_data :=kesplus_platform.EXCEPTION.errdata(SQLSTATE);
+				kesplus_platform.business_exception(v_error_data->>'code',v_error_data->>'msg');
+	END list;
+
+
+	/**
+	* @Description 分页查询 (已发布RESTful:/SalesPredictModule/rec_tmall_sales_forecast_feature/page)
+	* @param jsonData json信息查询条件
+	* @Return json
+	*/
+	FUNCTION page(jsonData jsonb) RETURNS JSONB AS
+	DECLARE
+		v_condition_sql varchar;
+		v_orderby_sql text;
+		v_result_json jsonb;
+		v_error_data jsonb;
+		v_execute_count_query_sql text;
+		v_execute_page_query_sql text;
+	BEGIN
+		IF jsonData IS NULL THEN
+			RAISE EXCEPTION '请输入数据';
+		END IF;
+
+		--构建查询条件
+		v_condition_sql := 'where '|| kesplus_platform.search_model.getConditionSql(jsonData, CONDITIONS);
+
+		--构建排序规则
+		v_orderby_sql := "kesplus_platform"."utils".get_order_by_sql(jsonData ->> 'orderColumns');
+
+		--数量统计查询语句,主子表为1=1关系,则只统计主表数量即可
+		v_execute_count_query_sql :='
+            SELECT count(*)
+            from (
+                SELECT 					ROWNUM AS "rn",
+					t1.id as id,					t1.item_id as itemId,					t1.anchor_date as anchorDate,					t1.category as category,					t1.brand_id as brandId,					t1.seller_id as sellerId,					t1.click_cnt_1d as clickCnt1D,					t1.click_uv_1d as clickUv1D,					t1.click_avg_1d as clickAvg1D,					t1.click_is_zero_1d as clickIsZero1D,					t1.click_cnt_3d as clickCnt3D,					t1.click_uv_3d as clickUv3D,					t1.click_avg_3d as clickAvg3D,					t1.click_is_zero_3d as clickIsZero3D,					t1.click_cnt_7d as clickCnt7D,					t1.click_uv_7d as clickUv7D,					t1.click_avg_7d as clickAvg7D,					t1.click_is_zero_7d as clickIsZero7D,					t1.click_cnt_14d as clickCnt14D,					t1.click_uv_14d as clickUv14D,					t1.click_avg_14d as clickAvg14D,					t1.click_is_zero_14d as clickIsZero14D,					t1.click_cnt_30d as clickCnt30D,					t1.click_uv_30d as clickUv30D,					t1.click_avg_30d as clickAvg30D,					t1.click_is_zero_30d as clickIsZero30D,					t1.collect_cnt_1d as collectCnt1D,					t1.collect_uv_1d as collectUv1D,					t1.collect_avg_1d as collectAvg1D,					t1.collect_is_zero_1d as collectIsZero1D,					t1.collect_cnt_3d as collectCnt3D,					t1.collect_uv_3d as collectUv3D,					t1.collect_avg_3d as collectAvg3D,					t1.collect_is_zero_3d as collectIsZero3D,					t1.collect_cnt_7d as collectCnt7D,					t1.collect_uv_7d as collectUv7D,					t1.collect_avg_7d as collectAvg7D,					t1.collect_is_zero_7d as collectIsZero7D,					t1.collect_cnt_14d as collectCnt14D,					t1.collect_uv_14d as collectUv14D,					t1.collect_avg_14d as collectAvg14D,					t1.collect_is_zero_14d as collectIsZero14D,					t1.collect_cnt_30d as collectCnt30D,					t1.collect_uv_30d as collectUv30D,					t1.collect_avg_30d as collectAvg30D,					t1.collect_is_zero_30d as collectIsZero30D,					t1.cart_cnt_1d as cartCnt1D,					t1.cart_uv_1d as cartUv1D,					t1.cart_avg_1d as cartAvg1D,					t1.cart_is_zero_1d as cartIsZero1D,					t1.cart_cnt_3d as cartCnt3D,					t1.cart_uv_3d as cartUv3D,					t1.cart_avg_3d as cartAvg3D,					t1.cart_is_zero_3d as cartIsZero3D,					t1.cart_cnt_7d as cartCnt7D,					t1.cart_uv_7d as cartUv7D,					t1.cart_avg_7d as cartAvg7D,					t1.cart_is_zero_7d as cartIsZero7D,					t1.cart_cnt_14d as cartCnt14D,					t1.cart_uv_14d as cartUv14D,					t1.cart_avg_14d as cartAvg14D,					t1.cart_is_zero_14d as cartIsZero14D,					t1.cart_cnt_30d as cartCnt30D,					t1.cart_uv_30d as cartUv30D,					t1.cart_avg_30d as cartAvg30D,					t1.cart_is_zero_30d as cartIsZero30D,					t1.pay_cnt_1d as payCnt1D,					t1.pay_uv_1d as payUv1D,					t1.pay_avg_1d as payAvg1D,					t1.pay_is_zero_1d as payIsZero1D,					t1.pay_cnt_3d as payCnt3D,					t1.pay_uv_3d as payUv3D,					t1.pay_avg_3d as payAvg3D,					t1.pay_is_zero_3d as payIsZero3D,					t1.pay_cnt_7d as payCnt7D,					t1.pay_uv_7d as payUv7D,					t1.pay_avg_7d as payAvg7D,					t1.pay_is_zero_7d as payIsZero7D,					t1.pay_cnt_14d as payCnt14D,					t1.pay_uv_14d as payUv14D,					t1.pay_avg_14d as payAvg14D,					t1.pay_is_zero_14d as payIsZero14D,					t1.pay_cnt_30d as payCnt30D,					t1.pay_uv_30d as payUv30D,					t1.pay_avg_30d as payAvg30D,					t1.pay_is_zero_30d as payIsZero30D,					t1.click_cnt_prev_7d as clickCntPrev7D,					t1.pay_cnt_prev_7d as payCntPrev7D,					t1.cart_cnt_prev_7d as cartCntPrev7D,					t1.click_cnt_prev_14d as clickCntPrev14D,					t1.pay_cnt_prev_14d as payCntPrev14D,					t1.pay_per_click_7d as payPerClick7D,					t1.cart_per_click_7d as cartPerClick7D,					t1.collect_per_click_7d as collectPerClick7D,					t1.pay_uv_per_click_uv_7d as payUvPerClickUv7D,					t1.pay_ratio_3d_to_7d as payRatio3DTo7D,					t1.pay_ratio_7d_to_14d as payRatio7DTo14D,					t1.click_cnt_delta_7d as clickCntDelta7D,					t1.pay_cnt_delta_7d as payCntDelta7D,					t1.cart_cnt_delta_7d as cartCntDelta7D,					t1.pay_cnt_delta_14d as payCntDelta14D,					t1.click_cnt_delta_14d as clickCntDelta14D,					t1.pay_mean_7d as payMean7D,					t1.pay_mean_14d as payMean14D,					t1.pay_mean_30d as payMean30D,					t1.pay_std_7d as payStd7D,					t1.pay_std_14d as payStd14D,					t1.pay_std_30d as payStd30D,					t1.pay_max_7d as payMax7D,					t1.pay_max_14d as payMax14D,					t1.pay_max_30d as payMax30D,					t1.click_mean_7d as clickMean7D,					t1.click_mean_14d as clickMean14D,					t1.click_mean_30d as clickMean30D,					t1.click_std_7d as clickStd7D,					t1.click_std_14d as clickStd14D,					t1.click_std_30d as clickStd30D,					t1.pay_active_days_30d as payActiveDays30D,					t1.active_days_30d as activeDays30D,					t1.days_since_last_click as daysSinceLastClick,					t1.days_since_last_pay as daysSinceLastPay,					t1.cumulative_active_days as cumulativeActiveDays,					t1.cumulative_pay_days as cumulativePayDays,					t1.item_age_days as itemAgeDays,					t1.day_of_week as dayOfWeek,					t1.is_weekend as isWeekend,					t1.day_of_month as dayOfMonth,					t1.month as month 
+				FROM SalesPredictModule.rec_tmall_sales_forecast_feature t1
+				%s
+            )
+        ';
+
+		--查询语句,其中查询条件和排序规则使用占位符
+		v_execute_page_query_sql :='
+            SELECT t1.* 
+            /*查询主表数据*/
+            from (
+                SELECT 					ROWNUM AS "rn",
+					t1.id as id,					t1.item_id as itemId,					t1.anchor_date as anchorDate,					t1.category as category,					t1.brand_id as brandId,					t1.seller_id as sellerId,					t1.click_cnt_1d as clickCnt1D,					t1.click_uv_1d as clickUv1D,					t1.click_avg_1d as clickAvg1D,					t1.click_is_zero_1d as clickIsZero1D,					t1.click_cnt_3d as clickCnt3D,					t1.click_uv_3d as clickUv3D,					t1.click_avg_3d as clickAvg3D,					t1.click_is_zero_3d as clickIsZero3D,					t1.click_cnt_7d as clickCnt7D,					t1.click_uv_7d as clickUv7D,					t1.click_avg_7d as clickAvg7D,					t1.click_is_zero_7d as clickIsZero7D,					t1.click_cnt_14d as clickCnt14D,					t1.click_uv_14d as clickUv14D,					t1.click_avg_14d as clickAvg14D,					t1.click_is_zero_14d as clickIsZero14D,					t1.click_cnt_30d as clickCnt30D,					t1.click_uv_30d as clickUv30D,					t1.click_avg_30d as clickAvg30D,					t1.click_is_zero_30d as clickIsZero30D,					t1.collect_cnt_1d as collectCnt1D,					t1.collect_uv_1d as collectUv1D,					t1.collect_avg_1d as collectAvg1D,					t1.collect_is_zero_1d as collectIsZero1D,					t1.collect_cnt_3d as collectCnt3D,					t1.collect_uv_3d as collectUv3D,					t1.collect_avg_3d as collectAvg3D,					t1.collect_is_zero_3d as collectIsZero3D,					t1.collect_cnt_7d as collectCnt7D,					t1.collect_uv_7d as collectUv7D,					t1.collect_avg_7d as collectAvg7D,					t1.collect_is_zero_7d as collectIsZero7D,					t1.collect_cnt_14d as collectCnt14D,					t1.collect_uv_14d as collectUv14D,					t1.collect_avg_14d as collectAvg14D,					t1.collect_is_zero_14d as collectIsZero14D,					t1.collect_cnt_30d as collectCnt30D,					t1.collect_uv_30d as collectUv30D,					t1.collect_avg_30d as collectAvg30D,					t1.collect_is_zero_30d as collectIsZero30D,					t1.cart_cnt_1d as cartCnt1D,					t1.cart_uv_1d as cartUv1D,					t1.cart_avg_1d as cartAvg1D,					t1.cart_is_zero_1d as cartIsZero1D,					t1.cart_cnt_3d as cartCnt3D,					t1.cart_uv_3d as cartUv3D,					t1.cart_avg_3d as cartAvg3D,					t1.cart_is_zero_3d as cartIsZero3D,					t1.cart_cnt_7d as cartCnt7D,					t1.cart_uv_7d as cartUv7D,					t1.cart_avg_7d as cartAvg7D,					t1.cart_is_zero_7d as cartIsZero7D,					t1.cart_cnt_14d as cartCnt14D,					t1.cart_uv_14d as cartUv14D,					t1.cart_avg_14d as cartAvg14D,					t1.cart_is_zero_14d as cartIsZero14D,					t1.cart_cnt_30d as cartCnt30D,					t1.cart_uv_30d as cartUv30D,					t1.cart_avg_30d as cartAvg30D,					t1.cart_is_zero_30d as cartIsZero30D,					t1.pay_cnt_1d as payCnt1D,					t1.pay_uv_1d as payUv1D,					t1.pay_avg_1d as payAvg1D,					t1.pay_is_zero_1d as payIsZero1D,					t1.pay_cnt_3d as payCnt3D,					t1.pay_uv_3d as payUv3D,					t1.pay_avg_3d as payAvg3D,					t1.pay_is_zero_3d as payIsZero3D,					t1.pay_cnt_7d as payCnt7D,					t1.pay_uv_7d as payUv7D,					t1.pay_avg_7d as payAvg7D,					t1.pay_is_zero_7d as payIsZero7D,					t1.pay_cnt_14d as payCnt14D,					t1.pay_uv_14d as payUv14D,					t1.pay_avg_14d as payAvg14D,					t1.pay_is_zero_14d as payIsZero14D,					t1.pay_cnt_30d as payCnt30D,					t1.pay_uv_30d as payUv30D,					t1.pay_avg_30d as payAvg30D,					t1.pay_is_zero_30d as payIsZero30D,					t1.click_cnt_prev_7d as clickCntPrev7D,					t1.pay_cnt_prev_7d as payCntPrev7D,					t1.cart_cnt_prev_7d as cartCntPrev7D,					t1.click_cnt_prev_14d as clickCntPrev14D,					t1.pay_cnt_prev_14d as payCntPrev14D,					t1.pay_per_click_7d as payPerClick7D,					t1.cart_per_click_7d as cartPerClick7D,					t1.collect_per_click_7d as collectPerClick7D,					t1.pay_uv_per_click_uv_7d as payUvPerClickUv7D,					t1.pay_ratio_3d_to_7d as payRatio3DTo7D,					t1.pay_ratio_7d_to_14d as payRatio7DTo14D,					t1.click_cnt_delta_7d as clickCntDelta7D,					t1.pay_cnt_delta_7d as payCntDelta7D,					t1.cart_cnt_delta_7d as cartCntDelta7D,					t1.pay_cnt_delta_14d as payCntDelta14D,					t1.click_cnt_delta_14d as clickCntDelta14D,					t1.pay_mean_7d as payMean7D,					t1.pay_mean_14d as payMean14D,					t1.pay_mean_30d as payMean30D,					t1.pay_std_7d as payStd7D,					t1.pay_std_14d as payStd14D,					t1.pay_std_30d as payStd30D,					t1.pay_max_7d as payMax7D,					t1.pay_max_14d as payMax14D,					t1.pay_max_30d as payMax30D,					t1.click_mean_7d as clickMean7D,					t1.click_mean_14d as clickMean14D,					t1.click_mean_30d as clickMean30D,					t1.click_std_7d as clickStd7D,					t1.click_std_14d as clickStd14D,					t1.click_std_30d as clickStd30D,					t1.pay_active_days_30d as payActiveDays30D,					t1.active_days_30d as activeDays30D,					t1.days_since_last_click as daysSinceLastClick,					t1.days_since_last_pay as daysSinceLastPay,					t1.cumulative_active_days as cumulativeActiveDays,					t1.cumulative_pay_days as cumulativePayDays,					t1.item_age_days as itemAgeDays,					t1.day_of_week as dayOfWeek,					t1.is_weekend as isWeekend,					t1.day_of_month as dayOfMonth,					t1.month as month 
+				FROM SalesPredictModule.rec_tmall_sales_forecast_feature t1
+				%s
+            ) as t1 
+            %s
+        ';
+
+		--进行分页查询
+		SELECT kesplus_platform.page.page(jsonb_build_object('countSql',format(v_execute_count_query_sql,v_condition_sql),'querySql',format(v_execute_page_query_sql,v_condition_sql,nvl(v_orderby_sql,' ')  || ' limit $1 offset $2')),(jsonData ->> 'pageIndex'),(jsonData ->> 'pageSize')) INTO v_result_json;
+
+		RETURN v_result_json;
+		EXCEPTION
+			WHEN OTHERS THEN
+		 		v_error_data :=kesplus_platform.EXCEPTION.errdata(SQLSTATE);
+				kesplus_platform.business_exception(v_error_data->>'code',v_error_data->>'msg');
+	END page;
+
+
+
+	/**
+	* @Description 工作流表单回调存储过程实现
+	* @param flowContent 流程上下文信息
+	*/
+	PROCEDURE workflowCallback(flowContent JSONB) AS
+	DECLARE
+		v_business_id varchar;
+		v_process_instance_id varchar;
+		v_process_status varchar;
+	BEGIN
+		/*表单id*/
+		v_business_id := flowContent ->>'business_id';
+		/*流程实例id*/
+		v_process_instance_id := flowContent ->>'process_instance_id';
+		v_process_status := flowContent ->>'process_status';
+
+		/*流程启动后*/
+		IF v_process_status = 'start' THEN
+			/*表单更新操作*/
+			/*示例如下，请根据实际业务需求进行调整*/
+			/*
+			update "rec_tmall_sales_forecast_feature" set status=2,process_id=v_process_instance_id where id= v_business_id;
+			*/
+		END IF;
+
+		/*流程完成后*/
+		IF v_process_status = 'end' THEN
+			/*表单更新操作*/
+			/*示例如下，请根据实际业务需求进行调整*/
+			/*
+			update "rec_tmall_sales_forecast_feature" set status=4 where id= v_business_id;
+			*/
+		END IF;
+
+		/*流程撤回后*/
+		IF v_process_status = 'cancel' THEN
+			/*表单更新操作*/
+			/*示例如下，请根据实际业务需求进行调整*/
+			/*
+			update "rec_tmall_sales_forecast_feature" set status=5,process_id=null where id= v_business_id;
+			*/
+		END IF;
+
+	END workflowCallback;
+
+
+	
+END;

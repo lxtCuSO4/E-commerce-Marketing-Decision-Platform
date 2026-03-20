@@ -1,0 +1,33 @@
+create or replace function "SalesPredictModule"."getSalesForecastFeatureByParams"(item_id integer,anchor_date date) return JSON as
+/**
+ * @Description 根据商品ID和锚定日期查询天猫销售预测特征信息
+ * @Param item_id 商品ID,精确匹配,非必填
+ * @Param anchor_date 锚定日期,精确匹配,非必填
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  if item_id is not null then
+    v_where_sql := v_where_sql || format(' and t1.item_id = %s', item_id);
+  end if;
+
+  if anchor_date is not null then
+    v_where_sql := v_where_sql || format(' and t1.anchor_date = %L::date', anchor_date);
+  end if;
+
+  execute_sql := '
+    select
+      t1.*
+    from "SalesPredictModule".rec_tmall_sales_forecast_feature t1
+    ' || v_where_sql || '
+    order by t1.item_id, t1.anchor_date
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

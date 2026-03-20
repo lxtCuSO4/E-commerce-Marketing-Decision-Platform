@@ -1,0 +1,45 @@
+create or replace function "DataImportModule"."getItemByParams"(title text,item_id integer) return JSON as
+declare
+  v_result json;
+  v_title text;
+  v_title_like text;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  v_title := trim(title);
+
+  if item_id is not null then
+    v_where_sql := v_where_sql || format(' and t1.item_id = %s', item_id);
+  end if;
+
+  if kesplus_platform.utils.str_is_not_empty(v_title) then
+    v_title := replace(v_title, '\', '\\');
+    v_title := replace(v_title, '%', '\%');
+    v_title := replace(v_title, '_', '\_');
+    v_title_like := '%' || v_title || '%';
+
+    v_where_sql := v_where_sql
+      || format(' and t1.title like %L escape ''\''', v_title_like);
+  end if;
+
+  execute_sql := '
+    select
+      t1.id as id,
+      t1.item_id as itemId,
+      t1.title as title,
+      t1.title_clean as titleClean,
+      t1.title_tokens as titleTokens,
+      t1.pict_url as pictUrl,
+      t1.category as category,
+      t1.brand_id as brandId,
+      t1.seller_id as sellerId
+    from "DataImportModule".rec_tmall_item_base t1
+    ' || v_where_sql || '
+    order by t1.item_id
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;
