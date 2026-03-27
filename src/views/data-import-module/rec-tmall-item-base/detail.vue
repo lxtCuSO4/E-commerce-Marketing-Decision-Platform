@@ -1,12 +1,12 @@
 <template>
-	<KPage class="item-detail-page">
-		<div class="m-b-16px">
+	<KPage class="item-detail-page emdmp-shell emdmp-detail-page">
+		<div class="emdmp-detail-toolbar">
 			<el-button @click="handleBack">返回</el-button>
 		</div>
 
-		<el-row :gutter="24">
-			<el-col :xs="24" :lg="12">
-				<el-card shadow="never" class="m-b-16px">
+		<el-row :gutter="24" class="detail-layout">
+			<el-col :xs="24" :lg="10" class="detail-media-col">
+				<el-card shadow="never" class="emdmp-surface-card detail-media-card">
 					<template #header>商品图片</template>
 					<div class="detail-image-wrap">
 						<img
@@ -19,7 +19,7 @@
 					</div>
 				</el-card>
 
-				<el-card shadow="never">
+				<el-card shadow="never" class="emdmp-surface-card detail-media-card">
 					<template #header>销售情况</template>
 					<div class="chart-toolbar">
 						<el-radio-group v-model="activeTrendKey" @change="handleTrendChange">
@@ -43,10 +43,10 @@
 				</el-card>
 			</el-col>
 
-			<el-col :xs="24" :lg="12">
-				<el-card shadow="never">
+			<el-col :xs="24" :lg="14" class="detail-info-col">
+				<el-card shadow="never" class="emdmp-surface-card detail-info-card">
 					<template #header>商品信息</template>
-					<el-descriptions :column="1" border>
+					<el-descriptions :column="1" border class="detail-info-descriptions">
 						<el-descriptions-item label="商品ID">
 							{{ form.itemId || "-" }}
 						</el-descriptions-item>
@@ -292,7 +292,7 @@ async function fetchForecastData(itemId) {
 
 async function fetchDetail() {
 	if (!currentId.value) {
-		message("缺少商品详情ID", { type: "warning" })
+		message("缺少商品详情 ID", { type: "warning" })
 		return
 	}
 
@@ -318,48 +318,112 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .item-detail-page {
-	padding: 16px;
+	padding-bottom: 6px;
+}
+
+.detail-layout {
+	align-items: stretch;
+}
+
+.detail-media-col,
+.detail-info-col {
+	display: flex;
+	min-width: 0;
+}
+
+.detail-media-col {
+	flex-direction: column;
+	gap: 16px;
+}
+
+.detail-media-card,
+.detail-info-card {
+	width: 100%;
+	min-width: 0;
+}
+
+.detail-info-card {
+	height: 100%;
 }
 
 .detail-image-wrap {
-	min-height: 320px;
+	min-height: clamp(280px, 28vw, 400px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: #fafafa;
-	border-radius: 8px;
+	padding: 20px;
+	background:
+		radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 48%),
+		linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+	border-radius: 16px;
 	overflow: hidden;
 }
 
 .detail-image {
 	display: block;
 	max-width: 100%;
-	max-height: 420px;
+	max-height: clamp(260px, 30vw, 460px);
 	object-fit: contain;
 }
 
 .chart-toolbar {
-	margin-bottom: 12px;
+	margin-bottom: 16px;
 	display: flex;
 	justify-content: center;
 }
 
 .chart-panel {
-	min-height: 320px;
+	min-height: clamp(300px, 26vw, 380px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-	border-radius: 8px;
+	padding: 10px 0;
+	background:
+		radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 52%),
+		linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+	border-radius: 16px;
 }
 
 .chart-canvas {
 	width: 100%;
-	height: 320px;
+	height: clamp(300px, 26vw, 380px);
 }
 
 .chart-placeholder {
 	color: #64748b;
 	font-size: 14px;
+	letter-spacing: 0.02em;
+}
+
+.detail-info-descriptions {
+	width: 100%;
+}
+
+:deep(.detail-info-card .el-card__body) {
+	height: 100%;
+}
+
+:deep(.detail-info-descriptions .el-descriptions__label) {
+	width: 180px;
+	min-width: 180px;
+	white-space: normal;
+	line-height: 1.45;
+}
+
+:deep(.detail-info-descriptions .el-descriptions__content) {
+	white-space: normal;
+	word-break: break-word;
+	line-height: 1.7;
+}
+
+@media (max-width: 1199px) {
+	.detail-media-col,
+	.detail-info-col {
+		display: block;
+	}
+
+	.detail-info-card {
+		height: auto;
+	}
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
-	<KQueryList>
-		<KQueryTable>
-			<el-form :model="queryForm" inline @submit.prevent>
+	<KQueryList class="emdmp-shell emdmp-query-page">
+		<KQueryTable class="emdmp-query-panel">
+			<el-form class="emdmp-query-form" :model="queryForm" @submit.prevent>
 				<el-form-item label="商品信息" prop="keyword">
 					<el-input
 						v-model="queryForm.keyword"
@@ -10,7 +10,7 @@
 						@keyup.enter="handleSearch"
 					/>
 				</el-form-item>
-				<el-form-item>
+				<el-form-item class="emdmp-query-actions">
 					<el-button type="primary" @click="handleSearch">查询</el-button>
 					<el-button @click="handleReset">重置</el-button>
 					<el-button
@@ -24,7 +24,7 @@
 					</el-button>
 				</el-form-item>
 			</el-form>
-			<KTableBar title="商品基础信息表" :columns="columns" @refresh="fetchData">
+			<KTableBar class="emdmp-table-panel" title="商品基础信息表" :columns="columns" @refresh="fetchData">
 				<template #default="{ size, dynamicColumns }">
 					<KTable
 						border
@@ -34,7 +34,6 @@
 						table-layout="auto"
 						:loading="loading"
 						:size="size"
-						height="100%"
 						:data="listData"
 						:columns="dynamicColumns"
 						:pagination="isSearchMode ? false : pagination"
@@ -79,19 +78,19 @@
 						</template>
 
 						<template #title="{ row }">
-							<div v-html="row.title"></div>
+							<div class="emdmp-rich-cell" v-html="row.title"></div>
 						</template>
 
 						<template #titleClean="{ row }">
-							<div v-html="row.titleClean"></div>
+							<div class="emdmp-rich-cell" v-html="row.titleClean"></div>
 						</template>
 
 						<template #titleTokens="{ row }">
-							<div v-html="row.titleTokens"></div>
+							<div class="emdmp-rich-cell" v-html="row.titleTokens"></div>
 						</template>
 
 						<template #pictUrl="{ row }">
-							<div v-html="row.pictUrl"></div>
+							<div class="emdmp-rich-cell" v-html="row.pictUrl"></div>
 						</template>
 					</KTable>
 				</template>
@@ -314,3 +313,16 @@ const handelSortChange = ({ prop, order }) => {
 
 onBeforeMount(fetchData)
 </script>
+
+<style scoped lang="scss">
+.emdmp-rich-cell {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+	line-height: 1.6;
+	text-align: left;
+}
+</style>

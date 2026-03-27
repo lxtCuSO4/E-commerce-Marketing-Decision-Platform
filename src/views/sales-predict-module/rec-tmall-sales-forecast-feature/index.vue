@@ -1,7 +1,7 @@
 <template>
-	<KQueryList>
-		<KQueryTable>
-			<el-form :model="queryForm" inline @submit.prevent>
+	<KQueryList class="emdmp-shell emdmp-shell--wide emdmp-query-page">
+		<KQueryTable class="emdmp-query-panel">
+			<el-form class="emdmp-query-form" :model="queryForm" @submit.prevent>
 				<el-form-item label="商品ID" prop="itemId">
 					<el-input
 						v-model="queryForm.itemId"
@@ -20,13 +20,14 @@
 						@change="normalizeQuery"
 					/>
 				</el-form-item>
-				<el-form-item>
+				<el-form-item class="emdmp-query-actions">
 					<el-button  type="primary" @click="handleSearch">查询</el-button>
 					<el-button @click="handleReset">重置</el-button>
 				</el-form-item>
 			</el-form>
 
 			<KTableBar
+				class="emdmp-table-panel"
 				title="天猫销售预测信息"
 				:columns="columns"
 				@refresh="fetchData"
@@ -54,7 +55,6 @@
 						table-layout="auto"
 						:loading="loading"
 						:size="size"
-						height="100%"
 						:data="listData"
 						:columns="dynamicColumns"
 						:pagination="isSearchMode ? false : pagination"

@@ -1,12 +1,12 @@
 <template>
-	<KPage class="prediction-detail-page">
-		<div class="m-b-16px">
+	<KPage class="prediction-detail-page emdmp-shell emdmp-detail-page">
+		<div class="emdmp-detail-toolbar">
 			<el-button @click="handleBack">返回</el-button>
 		</div>
 
 		<el-row :gutter="24">
 			<el-col :xs="24" :lg="12">
-				<el-card shadow="never">
+				<el-card shadow="never" class="emdmp-surface-card">
 					<template #header>未来7天支付预测</template>
 					<div class="chart-panel">
 						<div
@@ -20,7 +20,7 @@
 			</el-col>
 
 			<el-col :xs="24" :lg="12">
-				<el-card shadow="never">
+				<el-card shadow="never" class="emdmp-surface-card">
 					<template #header>预测结果信息</template>
 					<el-descriptions :column="1" border>
 						<el-descriptions-item label="商品ID">
@@ -246,25 +246,29 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .prediction-detail-page {
-	padding: 16px;
+	padding-bottom: 6px;
 }
 
 .chart-panel {
-	min-height: 360px;
+	min-height: clamp(300px, 28vw, 420px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-	border-radius: 8px;
+	padding: 10px 0;
+	background:
+		radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 52%),
+		linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+	border-radius: 16px;
 }
 
 .chart-canvas {
 	width: 100%;
-	height: 360px;
+	height: clamp(300px, 28vw, 420px);
 }
 
 .chart-placeholder {
 	color: #64748b;
 	font-size: 14px;
+	letter-spacing: 0.02em;
 }
 </style>

@@ -1,0 +1,58 @@
+create or replace function "BOperationsModule"."getMerchantDiagnosticsSearchByPage"(
+  merchant_id varchar,
+  page_index integer,
+  page_size integer
+) return JSON as
+/**
+ * @Description 查询B复购运营商家诊断分页列表（支持商家ID搜索）
+ * @Param merchant_id 商家ID，非必填
+ * @Param page_index 当前页码，从1开始
+ * @Param page_size 每页条数
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_page_index integer := greatest(coalesce(page_index, 1), 1);
+  v_page_size integer := greatest(coalesce(page_size, 20), 1);
+  v_offset integer;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  if nullif(merchant_id, '') is not null then
+    v_where_sql := v_where_sql || format(' and cast(t.merchant_id as varchar) = %L', merchant_id);
+  end if;
+
+  v_offset := (v_page_index - 1) * v_page_size;
+
+  execute_sql := '
+    select
+      count(1) as "totalElements",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              t.merchant_id as "merchantId",
+              t.merchant_buyer_count as "merchantBuyerCount",
+              t.avg_repurchase_score as "avgRepurchaseScore",
+              t.high_priority_user_count as "highPriorityUserCount",
+              t.risk_user_count as "riskUserCount",
+              t.merchant_tag as "merchantTag"
+            from "BOperationsModule".b_merchant_diagnostics t
+            ' || v_where_sql || '
+            order by t.high_priority_user_count desc, t.avg_repurchase_score desc
+            limit ' || v_page_size || '
+            offset ' || v_offset || '
+          ) x
+        ),
+        ''[]''::json
+      ) as "content"
+    from "BOperationsModule".b_merchant_diagnostics t
+    ' || v_where_sql || '
+  ';
+
+  execute kesplus_platform.json.object_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

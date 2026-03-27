@@ -8,7 +8,7 @@ export function getOverviewSummaryApi(params) {
 }
 
 export function getMerchantDiagnosticsApi(params) {
-	return request.get("/BOperationsModule/merchantDiagnosticsByPage", {
+	return request.get("/BOperationsModule/merchantDiagnosticsSearchByPage", {
 		params,
 		appPrefix: true,
 	})

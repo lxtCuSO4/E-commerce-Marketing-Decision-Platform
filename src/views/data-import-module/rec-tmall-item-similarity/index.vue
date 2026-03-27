@@ -1,7 +1,7 @@
 <template>
-	<KQueryList>
-		<KQueryTable>
-			<el-form :model="queryForm" inline @submit.prevent>
+	<KQueryList class="emdmp-shell emdmp-query-page">
+		<KQueryTable class="emdmp-query-panel">
+			<el-form class="emdmp-query-form" :model="queryForm" @submit.prevent>
 				<el-form-item label="源商品ID" prop="sourceItemId">
 					<el-input
 						v-model="queryForm.sourceItemId"
@@ -18,12 +18,12 @@
 						@keyup.enter="handleSearch"
 					/>
 				</el-form-item>
-				<el-form-item>
+				<el-form-item class="emdmp-query-actions">
 					<el-button type="primary" @click="handleSearch">查询</el-button>
 					<el-button @click="handleReset">重置</el-button>
 				</el-form-item>
 			</el-form>
-			<KTableBar title="商品相似度表" :columns="columns" @refresh="fetchData">
+			<KTableBar class="emdmp-table-panel" title="商品相似度表" :columns="columns" @refresh="fetchData">
 				<template #buttons>
 					<el-button
 						plain
@@ -46,7 +46,6 @@
 						table-layout="auto"
 						:loading="loading"
 						:size="size"
-						height="100%"
 						:data="listData"
 						:columns="dynamicColumns"
 						:pagination="isSearchMode ? false : pagination"

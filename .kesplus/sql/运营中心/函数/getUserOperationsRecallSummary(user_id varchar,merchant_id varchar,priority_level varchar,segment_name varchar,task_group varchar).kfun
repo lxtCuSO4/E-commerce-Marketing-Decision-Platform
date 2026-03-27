@@ -1,0 +1,148 @@
+create or replace function "BOperationsModule"."getUserOperationsRecallSummary"(
+  user_id varchar,
+  merchant_id varchar,
+  priority_level varchar,
+  segment_name varchar,
+  task_group varchar
+) return JSON as
+/**
+ * @Description 查询B复购运营用户运营与召回总览
+ * @Param user_id 用户ID，非必填
+ * @Param merchant_id 商家ID，非必填
+ * @Param priority_level 优先级，非必填
+ * @Param segment_name 用户分群名称，非必填
+ * @Param task_group 任务分组，非必填
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  if nullif(user_id, '') is not null then
+    v_where_sql := v_where_sql || format(' and cast(rs.user_id as varchar) = %L', user_id);
+  end if;
+
+  if nullif(merchant_id, '') is not null then
+    v_where_sql := v_where_sql || format(' and cast(rs.merchant_id as varchar) = %L', merchant_id);
+  end if;
+
+  if nullif(priority_level, '') is not null then
+    v_where_sql := v_where_sql || format(' and rs.priority_level = %L', priority_level);
+  end if;
+
+  if nullif(segment_name, '') is not null then
+    v_where_sql := v_where_sql || format(' and us.segment_name = %L', segment_name);
+  end if;
+
+  if nullif(task_group, '') is not null then
+    v_where_sql := v_where_sql || format(' and rt.task_group = %L', task_group);
+  end if;
+
+  execute_sql := '
+    with base as (
+      select
+        rs.user_id,
+        rs.merchant_id,
+        rs.repurchase_score,
+        rs.priority_level,
+        us.segment_name,
+        rt.task_group,
+        rt.recommended_action
+      from "BOperationsModule".b_repurchase_scores rs
+      left join "BOperationsModule".b_user_segments us
+        on rs.user_id = us.user_id
+      left join "BOperationsModule".b_recall_tasks rt
+        on rs.user_id = rt.user_id
+       and rs.merchant_id = rt.merchant_id
+      ' || v_where_sql || '
+    )
+    select
+      count(1) as "totalUserCount",
+      coalesce(
+        sum(
+          case
+            when lower(coalesce(base.priority_level, '''')) in (''high'', ''high_priority'')
+              or base.task_group = ''today_high_priority''
+            then 1
+            else 0
+          end
+        ),
+        0
+      ) as "highPriorityUserCount",
+      coalesce(
+        sum(
+          case
+            when lower(coalesce(base.priority_level, '''')) in (''medium'', ''medium_priority'')
+              or base.task_group in (''content_nurture'', ''coupon_followup'')
+            then 1
+            else 0
+          end
+        ),
+        0
+      ) as "mediumPriorityUserCount",
+      coalesce(round(avg(base.repurchase_score)::numeric, 4), 0) as "avgRepurchaseScore",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              coalesce(nullif(base.priority_level, ''''), ''未标注'') as "name",
+              count(*) as "value"
+            from base
+            group by 1
+            order by count(*) desc
+          ) x
+        ),
+        ''[]''::json
+      ) as "priorityBreakdown",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              coalesce(nullif(base.segment_name, ''''), ''未分群'') as "name",
+              count(*) as "value"
+            from base
+            group by 1
+            order by count(*) desc
+          ) x
+        ),
+        ''[]''::json
+      ) as "segmentBreakdown",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              coalesce(nullif(base.task_group, ''''), ''未分组'') as "name",
+              count(*) as "value"
+            from base
+            group by 1
+            order by count(*) desc
+          ) x
+        ),
+        ''[]''::json
+      ) as "taskGroupBreakdown",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              coalesce(nullif(base.recommended_action, ''''), ''未配置'') as "name",
+              count(*) as "value"
+            from base
+            group by 1
+            order by count(*) desc
+          ) x
+        ),
+        ''[]''::json
+      ) as "recommendedActionBreakdown"
+    from base
+  ';
+
+  execute kesplus_platform.json.object_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

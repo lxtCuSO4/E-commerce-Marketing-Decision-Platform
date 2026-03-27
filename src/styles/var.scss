@@ -51,25 +51,25 @@
 
   $bg-color: (
     "": #fff,
-    "page": rgb(242, 243, 245),
+    "page": #f3f5f9,
     "overlay": #ffffff,
   ),
   $border-radius: (
-    "base": 4px,
-    "small": 2px,
-    "round": 8px,
+    "base": 8px,
+    "small": 6px,
+    "round": 14px,
     "circle": 50%,
   ),
   $box-shadow: (
     "": (
-      0px 12px 32px 4px rgba(0, 0, 0, 0.04),
-      0px 8px 20px rgba(0, 0, 0, 0.08),
+      0px 18px 38px rgba(15, 23, 42, 0.08),
+      0px 10px 22px rgba(15, 23, 42, 0.06),
     ),
     "light": (
-      0px 0px 5px rgba(0, 0, 0, 0.1),
+      0px 10px 24px rgba(15, 23, 42, 0.06),
     ),
     "lighter": (
-      0px 0px 5px rgba(0, 0, 0, 0.12),
+      0px 8px 18px rgba(15, 23, 42, 0.08),
     ),
     "dark": (
       0px 16px 48px 16px rgba(0, 0, 0, 0.08),
@@ -83,12 +83,12 @@
     "large": 18px,
     "medium": 16px,
     "base": 14px,
-    "small": 12x,
+    "small": 12px,
     "extra-small": 10px,
   ),
   $common-component-size: (
     "large": 40px,
-    "default": 32px,
+    "default": 36px,
     "small": 24px,
   ),
   $checkbox: (
@@ -106,7 +106,7 @@
   ),
   $menu: (
     bg-color: getCssVar("bg-color", "blank"),
-    item-height: 42px,
+    item-height: 44px,
     text-color: getCssVar("text-color", "primary"),
   ),
   $header: (
@@ -114,7 +114,7 @@
     height: auto,
   ),
   $main: (
-    padding: 8px,
+    padding: 12px,
   ),
   $table-font-size: (
     "large": getCssVar("font-size", "base"),

@@ -1,0 +1,26 @@
+create or replace function "BOperationsModule"."getMerchantDiagnostics"() return JSON as
+/**
+ * @Description 查询B复购运营商家诊断列表
+ * @Return JSON
+ */
+declare
+  v_result json;
+  execute_sql text;
+begin
+  execute_sql := '
+    select
+      t.merchant_id as "merchantId",
+      t.merchant_buyer_count as "merchantBuyerCount",
+      t.avg_repurchase_score as "avgRepurchaseScore",
+      t.high_priority_user_count as "highPriorityUserCount",
+      t.risk_user_count as "riskUserCount",
+      t.merchant_tag as "merchantTag"
+    from "BOperationsModule".b_merchant_diagnostics t
+    order by t.high_priority_user_count desc, t.avg_repurchase_score desc
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

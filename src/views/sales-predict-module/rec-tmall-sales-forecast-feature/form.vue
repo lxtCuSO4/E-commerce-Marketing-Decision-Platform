@@ -1,19 +1,21 @@
 <template>
-	<KDialogForm>
-		<el-form
-			ref="formRef"
-			:model="form"
-			labelPosition="right"
-			label-width="198"
-		>
-			<KPage min-height="100" :no-padding="true">
-				<KSection>
-					<RecTmallSalesForecastFeatureComponent :span="12">
-					</RecTmallSalesForecastFeatureComponent>
-				</KSection>
-			</KPage>
-		</el-form>
-	</KDialogForm>
+	<div class="emdmp-form-shell">
+		<KDialogForm class="emdmp-form-dialog">
+			<el-form
+				ref="formRef"
+				:model="form"
+				labelPosition="right"
+				label-width="198"
+			>
+				<KPage class="emdmp-form-page" min-height="100" :no-padding="true">
+					<KSection>
+						<RecTmallSalesForecastFeatureComponent :span="12">
+						</RecTmallSalesForecastFeatureComponent>
+					</KSection>
+				</KPage>
+			</el-form>
+		</KDialogForm>
+	</div>
 </template>
 <script setup>
 import { ref, toRef } from "vue"
@@ -185,13 +187,13 @@ defineExpose({ submit, reset, closeDialog })
 </script>
 <style lang="scss" scoped>
 :deep(.k-design-block) {
-	--page-block-corner: 2px;
+	--page-block-corner: var(--emdmp-panel-radius);
 }
 :deep(.k-design-page-main > .kingbase-design-form-grid) {
-	row-gap: 8px !important;
+	row-gap: 16px !important;
 }
 :deep(.k-design-text-h6) {
-	font-weight: 600;
+	font-weight: 700;
 }
 /**
 :deep(.el-form-item__label) {

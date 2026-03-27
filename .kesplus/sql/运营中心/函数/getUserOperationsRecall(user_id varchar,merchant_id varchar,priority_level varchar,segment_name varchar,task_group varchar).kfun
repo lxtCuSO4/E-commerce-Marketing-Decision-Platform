@@ -1,0 +1,70 @@
+create or replace function "BOperationsModule"."getUserOperationsRecall"(
+  user_id varchar,
+  merchant_id varchar,
+  priority_level varchar,
+  segment_name varchar,
+  task_group varchar
+) return JSON as
+/**
+ * @Description 查询B复购运营用户运营与召回列表
+ * @Param user_id 用户ID，非必填
+ * @Param merchant_id 商家ID，非必填
+ * @Param priority_level 优先级，非必填
+ * @Param segment_name 用户分群名称，非必填
+ * @Param task_group 任务分组，非必填
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_where_sql text := ' where 1=1 ';
+  execute_sql text;
+begin
+  if nullif(user_id, '') is not null then
+    v_where_sql := v_where_sql || format(' and cast(rs.user_id as varchar) = %L', user_id);
+  end if;
+
+  if nullif(merchant_id, '') is not null then
+    v_where_sql := v_where_sql || format(' and cast(rs.merchant_id as varchar) = %L', merchant_id);
+  end if;
+
+  if nullif(priority_level, '') is not null then
+    v_where_sql := v_where_sql || format(' and rs.priority_level = %L', priority_level);
+  end if;
+
+  if nullif(segment_name, '') is not null then
+    v_where_sql := v_where_sql || format(' and us.segment_name = %L', segment_name);
+  end if;
+
+  if nullif(task_group, '') is not null then
+    v_where_sql := v_where_sql || format(' and rt.task_group = %L', task_group);
+  end if;
+
+  execute_sql := '
+    select
+      rs.user_id as "userId",
+      rs.merchant_id as "merchantId",
+      rs.repurchase_score as "repurchaseScore",
+      rs.risk_level as "riskLevel",
+      rs.priority_level as "priorityLevel",
+      rs.score_rank_in_merchant as "scoreRankInMerchant",
+      rs.top_reasons as "topReasons",
+      us.segment_id as "segmentId",
+      us.segment_name as "segmentName",
+      rt.recommended_action as "recommendedAction",
+      rt.reason_tags as "reasonTags",
+      rt.task_group as "taskGroup"
+    from "BOperationsModule".b_repurchase_scores rs
+    left join "BOperationsModule".b_user_segments us
+      on rs.user_id = us.user_id
+    left join "BOperationsModule".b_recall_tasks rt
+      on rs.user_id = rt.user_id
+     and rs.merchant_id = rt.merchant_id
+    ' || v_where_sql || '
+    order by rs.priority_level desc, rs.repurchase_score desc
+  ';
+
+  execute kesplus_platform.json.array_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;
