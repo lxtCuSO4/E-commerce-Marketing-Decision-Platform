@@ -1,0 +1,168 @@
+EMDMP models 目录说明
+
+本说明文件用于说明当前项目 `D:\kesplusProject\EMDMP\models` 目录下模型文件与 API 包的真实组织方式，便于本地开发、部署交付、参赛材料整理和后续维护时快速核对。
+
+一、当前目录定位
+
+1. 当前仓库根目录下的 `models` 不是历史遗留空目录，而是当前 FastAPI 运行时优先读取的模型包目录。
+2. 当前实际使用的一层包目录为 `models/EMDMP/`。
+3. 该目录同时承载两类内容：
+   - `models/EMDMP/apis/`：部署包形式的 API 代码
+   - `models/EMDMP/models/`：销量预测模型与特征配置文件
+4. 当前 FastAPI 对外接口前缀仍为：
+   - `/api/EMDMPAI/...`
+5. 因此需要区分两个概念：
+   - 磁盘上的部署包目录：`models/EMDMP/`
+   - 对外暴露的接口前缀：`/api/EMDMPAI/...`
+6. 目录名为 `EMDMP` 并不意味着接口前缀也要改成 `/api/EMDMP/...`。
+
+二、当前真实目录结构
+
+```text
+models/
+  EMDMP/
+    apis/
+      apis.json
+      competitor_analysis_api.py
+      llm_client.py
+      marketing_copy_api.py
+      product_qa_api.py
+      recommend_api.py
+      report_api.py
+      sales_forecast_api.py
+      sales_forecast_runtime.py
+      user_behavior_diagnosis_api.py
+      __init__.py
+    models/
+      sales_forecast_model.py
+      sales_forecast_lightgbm.pkl
+      sales_forecast_feature_columns.json
+      sales_forecast_categorical_columns.json
+```
+
+三、运行时加载关系
+
+1. `fastapi/main.py` 中的 `import_api_module()` 会优先检查：
+   - `models/EMDMP/apis/<module>.py`
+2. 当前默认 EMDMP_API_SOURCE=auto，会比较两套文件修改时间；fallback 文件更新或同时间时选择 fallback。
+3. 启动前设置进程环境变量 EMDMP_API_SOURCE=bundle 可优先模型包；设置 fastapi 可强制回退到：
+   - `fastapi/apps/EMDMPAI/apis/<module>.py`
+4. 因此，`models/EMDMP/apis/` 在当前项目里不是纯备份目录，而是优先级更高的运行时代码来源。
+
+四、apis 子目录说明
+
+目录：
+- `models/EMDMP/apis/`
+
+当前主要文件说明：
+
+1. `apis.json`
+   - 当前部署包接口清单。
+   - 描述接口文件、路径、方法、处理函数与超时配置。
+
+2. `llm_client.py`
+   - 大模型客户端封装。
+   - 统一读取 `.env` 中的模型配置并发起调用。
+
+3. `recommend_api.py`
+   - 推荐与健康检查接口。
+   - 当前覆盖：
+     - `GET /api/EMDMPAI/health`
+     - `POST /api/EMDMPAI/recommend-items`
+
+4. `report_api.py`
+   - 商业报告生成接口。
+   - 当前覆盖：
+     - `POST /api/EMDMPAI/generate-report`
+     - `POST /api/EMDMPAI/generate-report-pdf`
+     - `POST /api/EMDMPAI/generate-report/start`
+     - `GET /api/EMDMPAI/generate-report/tasks/{task_id}`
+
+5. `marketing_copy_api.py`
+   - 营销文案生成接口。
+   - 当前覆盖：
+     - `POST /api/EMDMPAI/generate-marketing-copy`
+
+6. `competitor_analysis_api.py`
+   - 竞品智能分析接口。
+   - 当前覆盖同步接口与异步增强任务接口。
+
+7. `product_qa_api.py`
+   - 商品问答助手接口。
+   - 当前覆盖：
+     - `POST /api/EMDMPAI/product-qa/chat`
+     - `GET /api/EMDMPAI/product-qa/hot-questions`
+
+8. `user_behavior_diagnosis_api.py`
+   - 用户行为分析诊断接口。
+   - 当前覆盖同步生成与异步增强轮询接口。
+
+9. `sales_forecast_api.py`
+   - 销量预测对外接口。
+   - 当前接口路径为：
+     - `POST /api/EMDMPAI/sales-forecast/predict`
+
+10. `sales_forecast_runtime.py`
+    - 销量预测运行时封装。
+    - 负责模型文件定位、加载、预测结果标准化和错误处理。
+
+11. `__init__.py`
+    - Python 包初始化文件。
+
+五、models 子目录说明
+
+目录：
+- `models/EMDMP/models/`
+
+当前文件说明：
+
+1. `sales_forecast_model.py`
+   - 销量预测模型 Python 入口文件。
+   - 运行时要求该文件暴露可调用的 `predict(payload)` 方法。
+
+2. `sales_forecast_lightgbm.pkl`
+   - LightGBM 预测模型二进制文件。
+   - 属于真实推理依赖，不建议随意移动或改名。
+
+3. `sales_forecast_feature_columns.json`
+   - 预测所需特征字段顺序清单。
+   - 用于约束输入字段映射与顺序对齐。
+
+4. `sales_forecast_categorical_columns.json`
+   - 类别特征字段清单。
+   - 用于模型运行时正确处理类别型输入。
+
+六、模型路径解析逻辑
+
+当前 `models/EMDMP/apis/sales_forecast_runtime.py` 的解析逻辑为：
+
+1. 优先定位部署包中的模型文件：
+   - `models/EMDMP/models/sales_forecast_model.py`
+2. 若部署包模型文件不存在，则回退到 FastAPI 目录下的默认模型文件：
+   - `fastapi/apps/EMDMPAI/models/sales_forecast_model.py`
+3. 如环境变量 `SALES_FORECAST_MODEL_FILE` 已配置，则优先使用该显式路径。
+
+七、与当前仓库其他目录的关系
+
+1. FastAPI 主入口位于：
+   - `D:\kesplusProject\EMDMP\fastapi\main.py`
+2. FastAPI 回退接口位于：
+   - `D:\kesplusProject\EMDMP\fastapi\apps\EMDMPAI\apis\`
+3. 根目录 `models/EMDMP/apis/` 与 `fastapi/apps/EMDMPAI/apis/` 的关系不是二选一文档关系，而是“优先部署包、回退 FastAPI 包”的运行时关系。
+4. 前端 AI 页面实际调用的是 `/api/EMDMPAI/...` 接口，不会直接读取本目录文件。
+
+八、维护注意事项
+
+1. 不要因为目录名是 `EMDMP` 就擅自把接口前缀改成 `/api/EMDMP/...`。
+2. 不要只替换模型二进制文件，而不检查：
+   - `sales_forecast_model.py`
+   - `sales_forecast_runtime.py`
+   - 特征 JSON 文件
+3. 不要删除 `models/EMDMP/apis/`，否则会改变 FastAPI 当前优先加载路径。
+4. 如果要做交付包、比赛源码包或部署包，建议把 `models/EMDMP/apis/` 与 `models/EMDMP/models/` 一并保留。
+
+九、结论
+
+当前 `D:\kesplusProject\EMDMP\models` 目录承担的是“部署包优先级入口 + 预测模型存放目录”的双重职责。维护与交付时应以当前真实运行逻辑为准：接口前缀继续使用 `/api/EMDMPAI/...`，而 API 模块与销量预测模型优先从 `models/EMDMP/` 读取。
+
+归档校正（2026-10-23）：完整恢复步骤与 Git LFS 模型说明见 README.md 和 docs/ARCHIVE.md。销量预测额外兼容 /api/EMDMP/sales-forecast/predict；其他 AI 接口仍使用 /api/EMDMPAI。上文“优先模型包”的说明需结合实际 EMDMP_API_SOURCE 和修改时间理解。

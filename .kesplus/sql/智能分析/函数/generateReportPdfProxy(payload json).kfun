@@ -1,0 +1,44 @@
+CREATE OR REPLACE FUNCTION "AiModule"."generateReportPdfProxy"(payload json) RETURN JSON AS
+/**
+ * @Description 由 KES Plus 直接调用大模型生成报告内容（供 PDF 导出使用）
+ * @Param payload JSON
+ * @Return JSON
+ */
+declare
+  l_system_prompt text := '你是电商经营分析顾问，请根据输入的商品、销量、推荐、经营相关数据，生成一份结构化商业分析报告。请尽量返回 JSON，字段包含 reportTitle、summary、analysisSections、recommendations、riskAlerts、actionItems。';
+  l_user_prompt text;
+  l_result jsonb;
+begin
+  if payload is null then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_payload',
+      'message', 'payload 不能为空'
+    );
+  end if;
+
+  l_user_prompt := '请基于以下业务数据生成可用于 PDF 导出的报告内容：' || chr(10) || payload::text;
+
+  l_result := "AiModule"."callLlmChatCompletions"(
+    l_system_prompt,
+    l_user_prompt,
+    0.3
+  )::jsonb;
+
+  return json_build_object(
+    'success', coalesce((l_result ->> 'success')::boolean, false),
+    'message', case
+      when coalesce((l_result ->> 'success')::boolean, false) then '报告内容生成完成，可用于后续 PDF 导出'
+      else coalesce(l_result ->> 'message', '报告内容生成失败')
+    end,
+    'errorCode', l_result ->> 'errorCode',
+    'requestUrl', l_result ->> 'requestUrl',
+    'requestPayload', l_result -> 'requestPayload',
+    'rawResponse', l_result,
+    'data', json_build_object(
+      'content', coalesce(l_result ->> 'content', ''),
+      'pdfReady', false,
+      'pdfMessage', '当前版本仅完成报告内容生成，PDF 文件导出链路需后续单独实现。'
+    )
+  );
+end;

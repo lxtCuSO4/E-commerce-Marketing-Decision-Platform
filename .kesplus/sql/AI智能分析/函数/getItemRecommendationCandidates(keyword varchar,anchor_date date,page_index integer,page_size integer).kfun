@@ -1,0 +1,229 @@
+create or replace function "AiModule"."getItemRecommendationCandidates"(keyword varchar,anchor_date date,page_index integer,page_size integer) return JSON as
+/**
+ * @Description 根据商品标题关键字查询候选商品，并聚合销量/点击等特征
+ * @Param keyword 标题关键字，非必填
+ * @Param anchor_date 锚定日期，非必填；为空时取最近一期预测特征
+ * @Param page_index 当前页码，从1开始
+ * @Param page_size 每页条数
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_keyword text;
+  v_keyword_like text;
+  v_where_sql text := ' where 1=1 ';
+  v_anchor_filter text := '';
+  v_page_index integer := greatest(coalesce(page_index, 1), 1);
+  v_page_size integer := greatest(coalesce(page_size, 20), 1);
+  v_offset integer;
+  execute_sql text;
+begin
+  v_keyword := trim(keyword);
+
+  if kesplus_platform.utils.str_is_not_empty(v_keyword) then
+    v_keyword := replace(v_keyword, '\', '\\');
+    v_keyword := replace(v_keyword, '%', '\%');
+    v_keyword := replace(v_keyword, '_', '\_');
+    v_keyword_like := '%' || v_keyword || '%';
+
+    v_where_sql := v_where_sql || format(
+      ' and (
+          cast(b.item_id as varchar) like %L escape ''\'' or
+          b.title like %L escape ''\'' or
+          b.title_clean like %L escape ''\'' or
+          b.title_tokens like %L escape ''\''
+        )',
+      v_keyword_like, v_keyword_like, v_keyword_like, v_keyword_like
+    );
+  end if;
+
+  if anchor_date is not null then
+    v_anchor_filter := format(' where f.anchor_date = %L::date ', anchor_date);
+  end if;
+
+  v_offset := (v_page_index - 1) * v_page_size;
+
+  execute_sql := '
+    with latest_feature as (
+      select distinct on (f.item_id)
+        f.item_id,
+        f.anchor_date,
+        f.click_cnt_7d,
+        f.click_uv_7d,
+        f.click_avg_7d,
+        f.click_cnt_30d,
+        f.click_uv_30d,
+        f.pay_cnt_7d,
+        f.pay_cnt_30d,
+        f.pay_per_click_7d,
+        f.click_cnt_delta_7d,
+        f.pay_cnt_delta_7d,
+        f.click_mean_7d,
+        f.click_std_7d,
+        f.item_age_days
+      from "SalesPredictModule".rec_tmall_sales_forecast_feature f
+      ' || v_anchor_filter || '
+      order by f.item_id, f.anchor_date desc
+    ),
+    base as (
+      select
+        b.item_id as "itemId",
+        b.title as "title",
+        b.title_clean as "titleClean",
+        b.title_tokens as "titleTokens",
+        b.pict_url as "pictUrl",
+        b.category as "category",
+        b.brand_id as "brandId",
+        b.seller_id as "sellerId",
+        coalesce(s.click_cnt, 0) as "clickCnt",
+        coalesce(s.collect_cnt, 0) as "collectCnt",
+        coalesce(s.cart_cnt, 0) as "cartCnt",
+        coalesce(s.pay_cnt, 0) as "payCnt",
+        s.last_action_time as "lastActionTime",
+        lf.anchor_date as "anchorDate",
+        coalesce(lf.click_cnt_7d, 0) as "clickCnt7D",
+        coalesce(lf.click_uv_7d, 0) as "clickUv7D",
+        coalesce(lf.click_avg_7d, 0) as "clickAvg7D",
+        coalesce(lf.click_cnt_30d, 0) as "clickCnt30D",
+        coalesce(lf.click_uv_30d, 0) as "clickUv30D",
+        coalesce(lf.pay_cnt_7d, 0) as "payCnt7D",
+        coalesce(lf.pay_cnt_30d, 0) as "payCnt30D",
+        coalesce(lf.pay_per_click_7d, 0) as "payPerClick7D",
+        coalesce(lf.click_cnt_delta_7d, 0) as "clickCntDelta7D",
+        coalesce(lf.pay_cnt_delta_7d, 0) as "payCntDelta7D",
+        coalesce(lf.click_mean_7d, 0) as "clickMean7D",
+        coalesce(lf.click_std_7d, 0) as "clickStd7D",
+        coalesce(lf.item_age_days, 0) as "itemAgeDays"
+      from "DataImportModule".rec_tmall_item_base b
+      left join "DataImportModule".rec_tmall_item_sales s
+        on b.item_id = s.item_id
+      left join latest_feature lf
+        on b.item_id = lf.item_id
+      ' || v_where_sql || '
+    ),
+    stats as (
+      select
+        min(coalesce(base."payCnt", 0)) as "minPayCnt",
+        max(coalesce(base."payCnt", 0)) as "maxPayCnt",
+        min(coalesce(base."clickCnt", 0)) as "minClickCnt",
+        max(coalesce(base."clickCnt", 0)) as "maxClickCnt",
+        min(coalesce(base."clickCnt7D", 0)) as "minClickCnt7D",
+        max(coalesce(base."clickCnt7D", 0)) as "maxClickCnt7D",
+        min(coalesce(base."clickUv7D", 0)) as "minClickUv7D",
+        max(coalesce(base."clickUv7D", 0)) as "maxClickUv7D",
+        min(greatest(coalesce(base."payPerClick7D", 0), 0) * 100) as "minPayPerClick7D",
+        max(greatest(coalesce(base."payPerClick7D", 0), 0) * 100) as "maxPayPerClick7D"
+      from base
+    ),
+    ranked as (
+      select
+        base.*,
+        round(
+          (
+            (
+              case
+                when stats."maxPayCnt" > stats."minPayCnt" then
+                  (coalesce(base."payCnt", 0) - stats."minPayCnt") * 100.0 / nullif(stats."maxPayCnt" - stats."minPayCnt", 0)
+                when coalesce(base."payCnt", 0) > 0 then 100
+                else 0
+              end
+            ) * 0.45 +
+            (
+              case
+                when stats."maxClickCnt" > stats."minClickCnt" then
+                  (coalesce(base."clickCnt", 0) - stats."minClickCnt") * 100.0 / nullif(stats."maxClickCnt" - stats."minClickCnt", 0)
+                when coalesce(base."clickCnt", 0) > 0 then 100
+                else 0
+              end
+            ) * 0.20 +
+            (
+              case
+                when stats."maxClickCnt7D" > stats."minClickCnt7D" then
+                  (coalesce(base."clickCnt7D", 0) - stats."minClickCnt7D") * 100.0 / nullif(stats."maxClickCnt7D" - stats."minClickCnt7D", 0)
+                when coalesce(base."clickCnt7D", 0) > 0 then 100
+                else 0
+              end
+            ) * 0.15 +
+            (
+              case
+                when stats."maxClickUv7D" > stats."minClickUv7D" then
+                  (coalesce(base."clickUv7D", 0) - stats."minClickUv7D") * 100.0 / nullif(stats."maxClickUv7D" - stats."minClickUv7D", 0)
+                when coalesce(base."clickUv7D", 0) > 0 then 100
+                else 0
+              end
+            ) * 0.10 +
+            (
+              case
+                when stats."maxPayPerClick7D" > stats."minPayPerClick7D" then
+                  (greatest(coalesce(base."payPerClick7D", 0), 0) * 100 - stats."minPayPerClick7D") * 100.0 / nullif(stats."maxPayPerClick7D" - stats."minPayPerClick7D", 0)
+                when greatest(coalesce(base."payPerClick7D", 0), 0) * 100 > 0 then 100
+                else 0
+              end
+            ) * 0.10
+          )::numeric,
+          2
+        ) as "recommendationScore"
+      from base
+      cross join stats
+    )
+    select
+      count(1) as "totalElements",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              r."itemId",
+              r."title",
+              r."titleClean",
+              r."titleTokens",
+              r."pictUrl",
+              r."category",
+              r."brandId",
+              r."sellerId",
+              r."clickCnt",
+              r."collectCnt",
+              r."cartCnt",
+              r."payCnt",
+              r."lastActionTime",
+              r."anchorDate",
+              r."clickCnt7D",
+              r."clickUv7D",
+              r."clickAvg7D",
+              r."clickCnt30D",
+              r."clickUv30D",
+              r."payCnt7D",
+              r."payCnt30D",
+              r."payPerClick7D",
+              r."clickCntDelta7D",
+              r."payCntDelta7D",
+              r."clickMean7D",
+              r."clickStd7D",
+              r."itemAgeDays",
+              r."recommendationScore",
+              case
+                when r."recommendationScore" >= 80 then ''高推荐''
+                when r."recommendationScore" >= 55 then ''中推荐''
+                else ''低推荐''
+              end as "recommendationLevel",
+              ''基于标题匹配、销量、点击与近7日转化特征生成的基础推荐分'' as "recommendationReason"
+            from ranked r
+            order by
+              r."recommendationScore" desc,
+              r."payCnt" desc,
+              r."clickCnt" desc,
+              r."itemId"
+            limit ' || v_page_size || '
+            offset ' || v_offset || '
+          ) x
+        ),
+        ''[]''::json
+      ) as "content"
+    from ranked
+  ';
+
+  execute kesplus_platform.json.object_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

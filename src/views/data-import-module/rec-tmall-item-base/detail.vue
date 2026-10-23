@@ -321,6 +321,12 @@ onBeforeUnmount(() => {
 	padding-bottom: 6px;
 }
 
+:deep(.emdmp-detail-toolbar) {
+	background:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(244, 249, 255, 0.88) 58%, rgba(255, 247, 243, 0.9)),
+		radial-gradient(circle at top left, rgba(245, 158, 11, 0.14), transparent 28%);
+}
+
 .detail-layout {
 	align-items: stretch;
 }
@@ -340,6 +346,7 @@ onBeforeUnmount(() => {
 .detail-info-card {
 	width: 100%;
 	min-width: 0;
+	overflow: hidden;
 }
 
 .detail-info-card {
@@ -351,11 +358,11 @@ onBeforeUnmount(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 20px;
+	padding: 24px;
 	background:
-		radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 48%),
+		radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 48%),
 		linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
-	border-radius: 16px;
+	border-radius: 22px;
 	overflow: hidden;
 }
 
@@ -377,11 +384,11 @@ onBeforeUnmount(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 10px 0;
+	padding: 14px 10px;
 	background:
-		radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 52%),
+		radial-gradient(circle at top, rgba(37, 99, 235, 0.14), transparent 52%),
 		linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
-	border-radius: 16px;
+	border-radius: 22px;
 }
 
 .chart-canvas {
@@ -401,6 +408,12 @@ onBeforeUnmount(() => {
 
 :deep(.detail-info-card .el-card__body) {
 	height: 100%;
+}
+
+:deep(.detail-media-card .el-card__header),
+:deep(.detail-info-card .el-card__header) {
+	font-family: "Georgia", "Times New Roman", serif;
+	font-size: 24px;
 }
 
 :deep(.detail-info-descriptions .el-descriptions__label) {

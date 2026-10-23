@@ -1,0 +1,174 @@
+{
+  "app_info": {
+    "display_name": "EMDMP AI Runtime",
+    "author": "Codex",
+    "student_id": "",
+    "description": "EMDMP external AI gateway for recommendation and business report generation"
+  },
+  "api_configurations": [
+    {
+      "api_file": "competitor_analysis_api.py",
+      "endpoints": [
+        {
+          "path": "/competitor-analysis",
+          "http_method": "POST",
+          "handler_function": "competitor_analysis",
+          "title": "Competitor Analysis",
+          "description": "Generate a structured competitor analysis using the cloud LLM with fallback output",
+          "timeout_seconds": 45
+        },
+        {
+          "path": "/competitor-analysis/start",
+          "http_method": "POST",
+          "handler_function": "start_competitor_analysis",
+          "title": "Start Competitor Analysis",
+          "description": "Start an asynchronous competitor analysis enhancement task",
+          "timeout_seconds": 10
+        },
+        {
+          "path": "/competitor-analysis/tasks/{task_id}",
+          "http_method": "GET",
+          "handler_function": "get_competitor_analysis_task",
+          "title": "Get Competitor Analysis Task Status",
+          "description": "Poll the current status of an asynchronous competitor analysis task",
+          "timeout_seconds": 10
+        }
+      ]
+    },
+    {
+      "api_file": "marketing_copy_api.py",
+      "endpoints": [
+        {
+          "path": "/generate-marketing-copy",
+          "http_method": "POST",
+          "handler_function": "generate_marketing_copy",
+          "title": "Generate Marketing Copy",
+          "description": "Generate structured marketing copy for selected recommendation items",
+          "timeout_seconds": 45
+        }
+      ]
+    },
+    {
+      "api_file": "product_qa_api.py",
+      "endpoints": [
+        {
+          "path": "/product-qa/chat",
+          "http_method": "POST",
+          "handler_function": "product_qa_chat",
+          "title": "Product QA Chat",
+          "description": "Answer product questions with structured item knowledge and conversation context",
+          "timeout_seconds": 45
+        },
+        {
+          "path": "/product-qa/hot-questions",
+          "http_method": "GET",
+          "handler_function": "product_qa_hot_questions",
+          "title": "Product QA Hot Questions",
+          "description": "Return suggested hot questions for the current product context",
+          "timeout_seconds": 10
+        }
+      ]
+    },
+    {
+      "api_file": "recommend_api.py",
+      "endpoints": [
+        {
+          "path": "/health",
+          "http_method": "GET",
+          "handler_function": "health",
+          "title": "Health Check",
+          "description": "Check LLM service connectivity",
+          "timeout_seconds": 5
+        },
+        {
+          "path": "/recommend-items",
+          "http_method": "POST",
+          "handler_function": "recommend_items",
+          "title": "Recommend Items",
+          "description": "Score candidate items with local LLM assistance",
+          "timeout_seconds": 30
+        }
+      ]
+    },
+    {
+      "api_file": "report_api.py",
+      "endpoints": [
+        {
+          "path": "/generate-report",
+          "http_method": "POST",
+          "handler_function": "generate_report",
+          "title": "Generate Business Report",
+          "description": "Generate a structured business report using the local LLM",
+          "timeout_seconds": 45
+        },
+        {
+          "path": "/generate-report-pdf",
+          "http_method": "POST",
+          "handler_function": "generate_report_pdf",
+          "title": "Generate Business Report PDF",
+          "description": "Generate a structured business report and export it to PDF",
+          "timeout_seconds": 60
+        },
+        {
+          "path": "/generate-report/start",
+          "http_method": "POST",
+          "handler_function": "start_generate_report",
+          "title": "Start Generate Business Report",
+          "description": "Start an asynchronous business report enhancement task",
+          "timeout_seconds": 10
+        },
+        {
+          "path": "/generate-report/tasks/{task_id}",
+          "http_method": "GET",
+          "handler_function": "get_generate_report_task",
+          "title": "Get Business Report Task Status",
+          "description": "Poll the current status of an asynchronous business report task",
+          "timeout_seconds": 10
+        }
+      ]
+    },
+    {
+      "api_file": "sales_forecast_api.py",
+      "endpoints": [
+        {
+          "path": "/sales-forecast/predict",
+          "http_method": "POST",
+          "handler_function": "sales_forecast_predict",
+          "title": "Sales Forecast Predict",
+          "description": "Run the dedicated sales forecast Python model with feature snapshot input",
+          "timeout_seconds": 30,
+          "model_path": "models/sales_forecast_lightgbm.pkl"
+        }
+      ]
+    },
+    {
+      "api_file": "user_behavior_diagnosis_api.py",
+      "endpoints": [
+        {
+          "path": "/generate-user-behavior-diagnosis",
+          "http_method": "POST",
+          "handler_function": "generate_user_behavior_diagnosis",
+          "title": "Generate User Behavior Diagnosis",
+          "description": "Generate a structured item or merchant behavior diagnosis using the cloud LLM with fallback output",
+          "timeout_seconds": 45
+        },
+        {
+          "path": "/generate-user-behavior-diagnosis/start",
+          "http_method": "POST",
+          "handler_function": "start_generate_user_behavior_diagnosis",
+          "title": "Start Generate User Behavior Diagnosis",
+          "description": "Start an asynchronous user behavior diagnosis enhancement task",
+          "timeout_seconds": 10
+        },
+        {
+          "path": "/generate-user-behavior-diagnosis/tasks/{task_id}",
+          "http_method": "GET",
+          "handler_function": "get_generate_user_behavior_diagnosis_task",
+          "title": "Get User Behavior Diagnosis Task Status",
+          "description": "Poll the current status of an asynchronous user behavior diagnosis task",
+          "timeout_seconds": 10
+        }
+      ]
+    }
+  ]
+}

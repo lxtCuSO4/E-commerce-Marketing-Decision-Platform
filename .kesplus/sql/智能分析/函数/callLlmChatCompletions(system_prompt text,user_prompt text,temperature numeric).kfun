@@ -1,0 +1,78 @@
+CREATE OR REPLACE FUNCTION "AiModule"."callLlmChatCompletions"(
+  system_prompt text,
+  user_prompt text,
+  temperature numeric
+) RETURN JSON AS
+/**
+ * @Description 通用 Chat Completions 调用函数
+ * @Param system_prompt 系统提示词
+ * @Param user_prompt 用户提示词
+ * @Param temperature 温度
+ * @Return JSON
+ */
+declare
+  l_base_url varchar := 'https://api.siliconflow.cn/v1';
+  l_chat_path varchar := '/chat/completions';
+  l_api_key varchar := 'YOUR_API_KEY_CONFIGURED_AT_DEPLOYMENT';
+  l_model varchar := 'deepseek-ai/DeepSeek-V4-Flash';
+  l_headers json;
+  l_payload json;
+  l_result jsonb;
+  l_text text;
+begin
+  /*
+   * l_api_key 这里需要你再补真实值，
+   * 因为 models 目录里没有存明文 key。
+   */
+
+  l_headers := json_build_object(
+    'Content-Type', 'application/json',
+    'Authorization', 'Bearer ' || l_api_key
+  );
+
+  l_payload := json_build_object(
+    'model', l_model,
+    'temperature', coalesce(temperature, 0.3),
+    'messages', json_build_array(
+      json_build_object('role', 'system', 'content', coalesce(system_prompt, '')),
+      json_build_object('role', 'user', 'content', coalesce(user_prompt, ''))
+    )
+  );
+
+  l_result := "AiModule"."callLlmHttp"(
+    l_base_url || l_chat_path,
+    l_headers,
+    l_payload,
+    30000
+  )::jsonb;
+
+  if coalesce(l_result ->> 'success', 'false') <> 'true' then
+    return l_result::json;
+  end if;
+
+  l_text := coalesce(
+    l_result #>> '{data,choices,0,message,content}',
+    l_result #>> '{rawResponse,content,choices,0,message,content}',
+    ''
+  );
+
+  return json_build_object(
+    'success', true,
+    'message', '大模型调用成功',
+    'requestUrl', l_base_url || l_chat_path,
+    'requestPayload', l_payload,
+    'rawResponse', l_result,
+    'content', l_text,
+    'data', json_build_object(
+      'content', l_text
+    )
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'llm_chat_exception',
+      'message', 'Chat Completions 调用异常：' || SQLERRM
+    );
+end;

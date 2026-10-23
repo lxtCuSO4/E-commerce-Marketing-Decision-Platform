@@ -1,8 +1,14 @@
 <template>
 	<KPage class="emdmp-shell emdmp-shell--wide overview-page">
-		<div class="emdmp-page-hero">
+		<div class="emdmp-page-hero overview-hero">
 			<div>
 				<p class="emdmp-page-kicker">Operations Center</p>
+				<div class="overview-hero-copy">
+					<h1>运营总览与商家诊断</h1>
+					<p>
+						围绕商家标签、优先级用户与任务分组建立多层经营诊断视图，帮助快速识别重点商家与运营跟进方向。
+					</p>
+				</div>
 				<h1 class="emdmp-page-title">运营总览与商家诊断</h1>
 				<p class="emdmp-page-description">
 					以用户优先级、商家标签和任务分组为主线，建立从总览到明细的运营诊断视图。
@@ -365,6 +371,40 @@ onBeforeUnmount(() => {
 	gap: 18px;
 }
 
+.overview-hero {
+	background:
+		linear-gradient(140deg, rgba(255, 255, 255, 0.94), rgba(243, 248, 255, 0.9) 55%, rgba(255, 247, 243, 0.92)),
+		radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%);
+}
+
+.overview-hero-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.overview-hero-copy h1 {
+	margin: 0;
+	font-family: "Georgia", "Times New Roman", serif;
+	font-size: clamp(32px, 2vw, 48px);
+	line-height: 1.05;
+	letter-spacing: -0.03em;
+	color: #122033;
+}
+
+.overview-hero-copy p {
+	margin: 0;
+	max-width: 860px;
+	font-size: 15px;
+	line-height: 1.9;
+	color: #46566d;
+}
+
+.overview-hero :deep(.emdmp-page-title),
+.overview-hero :deep(.emdmp-page-description) {
+	display: none;
+}
+
 .summary-card {
 	display: flex;
 	flex-direction: column;
@@ -421,6 +461,7 @@ onBeforeUnmount(() => {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 12px;
+	padding: 4px 2px;
 }
 
 .overview-search-form :deep(.el-form-item) {
@@ -435,8 +476,19 @@ onBeforeUnmount(() => {
 :deep(.overview-table-card .el-card__header) {
 	padding-bottom: 0;
 	border-bottom: 0;
-	font-size: 16px;
+	font-family: "Georgia", "Times New Roman", serif;
+	font-size: 24px;
 	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+:deep(.overview-chart-card .el-card__body) {
+	padding-top: 8px;
+}
+
+:deep(.overview-search-card .el-card__body) {
+	padding-top: 10px;
+	padding-bottom: 14px;
 }
 
 @media (max-width: 768px) {

@@ -21,10 +21,58 @@
 					/>
 				</el-form-item>
 				<el-form-item class="emdmp-query-actions">
-					<el-button  type="primary" @click="handleSearch">查询</el-button>
+					<el-button type="primary" @click="handleSearch">查询</el-button>
+					<el-button type="success" :loading="predicting" @click="handleOnlinePredict">
+						在线预测
+					</el-button>
 					<el-button @click="handleReset">重置</el-button>
 				</el-form-item>
 			</el-form>
+
+			<el-card v-if="onlinePrediction" class="sales-forecast-online-card" shadow="never">
+				<template #header>
+					<div class="sales-forecast-online-header">
+						<div>
+							<div class="sales-forecast-online-title">在线预测结果</div>
+							<div class="sales-forecast-online-subtitle">
+								模型来源：{{ onlinePrediction.modelLabel || "Sales Forecast Python Model" }}
+								<span v-if="onlinePrediction.modelVersion">
+									· {{ onlinePrediction.modelVersion }}
+								</span>
+							</div>
+						</div>
+						<el-tag type="success">实时调用</el-tag>
+					</div>
+				</template>
+
+				<el-descriptions :column="3" border class="sales-forecast-online-summary">
+					<el-descriptions-item label="商品ID">
+						{{ onlinePrediction.itemId || "-" }}
+					</el-descriptions-item>
+					<el-descriptions-item label="锚定日期">
+						{{ formatDate(onlinePrediction.anchorDate) }}
+					</el-descriptions-item>
+					<el-descriptions-item label="预测天数">
+						{{ onlinePrediction.horizonDays || 7 }}
+					</el-descriptions-item>
+				</el-descriptions>
+
+				<div class="sales-forecast-online-grid">
+					<div
+						v-for="metric in onlinePredictionMetrics"
+						:key="metric.label"
+						class="sales-forecast-online-metric"
+					>
+						<span class="sales-forecast-online-metric-label">{{ metric.label }}</span>
+						<strong class="sales-forecast-online-metric-value">{{ metric.value }}</strong>
+					</div>
+				</div>
+				<div class="sales-forecast-online-actions">
+					<el-button type="primary" plain @click="handleOnlineVisualDetailRedirect">
+						查看可视化详情
+					</el-button>
+				</div>
+			</el-card>
 
 			<KTableBar
 				class="emdmp-table-panel"
@@ -64,6 +112,12 @@
 						@page-current-change="handleCurrentPageChange"
 						@row-click="(...v) => $emit('rowClick', ...v)"
 					>
+						<template #predictionSelection="{ row }">
+							<el-checkbox
+								:model-value="selectedPredictionRow?.id === row.id"
+								@change="handlePredictionSelectionToggle(row)"
+							/>
+						</template>
 						<template #operation="{ row }">
 							<el-button
 								v-access="'salesPredictModule:recTmallSalesForecastFeature:edit'"
@@ -104,20 +158,26 @@
 </template>
 
 <script setup>
-import { onBeforeMount, ref } from "vue"
+import { computed, nextTick, onBeforeMount, ref, watch } from "vue"
 import {
 	defineRouteMeta,
 	usePageModel,
 	getSortChangeStr,
-	numeral,
-	KFilePreviewer,
 	message,
 } from "@kesplus/kesplus"
+import { useRouter } from "@@/core/coreExports"
 import {
 	pageApi,
 	getSalesForecastFeatureByParamsApi,
 } from "./utils/rec-tmall-sales-forecast-feature-api"
+import { predictSalesForecastOnlineApi } from "../rec-sales-forecast-predictions/utils/rec-sales-forecast-predictions-api"
+import {
+	buildDisplayedPredictionMetrics,
+	formatPredictionMetric,
+} from "../rec-sales-forecast-predictions/utils/prediction-detail-state"
 import { handleEdit, handleView, handleDelete } from "./utils/hooks"
+import { saveOnlinePredictionSnapshot } from "../rec-sales-forecast-predictions/utils/online-prediction-cache"
+import { getNextSelectedPredictionRow } from "../rec-sales-forecast-predictions/utils/single-prediction-selection"
 import dayjs from "dayjs"
 
 defineOptions({
@@ -129,7 +189,12 @@ defineRouteMeta({
 	title: "天猫销售预测信息",
 })
 
+const router = useRouter()
 const isSearchMode = ref(false)
+const predicting = ref(false)
+const onlinePrediction = ref(null)
+const latestOnlinePredictionSnapshot = ref(null)
+const selectedPredictionRow = ref(null)
 
 const {
 	queryForm,
@@ -185,9 +250,90 @@ const {
 		access.hasAccess("salesPredictModule:recTmallSalesForecastFeature:detail"),
 })
 
+const onlinePredictionMetrics = computed(() => {
+	if (!onlinePrediction.value) {
+		return []
+	}
+	return buildDisplayedPredictionMetrics(onlinePrediction.value)
+})
+
+function formatMetric(value) {
+	return formatPredictionMetric(value)
+}
+
+function formatDate(value) {
+	return value ? dayjs(value).format("YYYY-MM-DD") : "-"
+}
+
+function buildOnlinePredictionSnapshot(featureRow, result) {
+	return {
+		resultSource: "online_prediction",
+		itemId: result?.itemId ?? featureRow?.itemId ?? queryForm.itemId ?? "",
+		anchorDate:
+			result?.anchorDate ?? featureRow?.anchorDate ?? queryForm.anchorDateText ?? "",
+		category: featureRow?.category ?? "",
+		brandId: featureRow?.brandId ?? "",
+		sellerId: featureRow?.sellerId ?? "",
+		payCnt7D: featureRow?.payCnt7D ?? "",
+		payCnt30D: featureRow?.payCnt30D ?? "",
+		predPayD1: result?.predPayD1 ?? "",
+		predPayD2: result?.predPayD2 ?? "",
+		predPayD3: result?.predPayD3 ?? "",
+		predPayD4: result?.predPayD4 ?? "",
+		predPayD5: result?.predPayD5 ?? "",
+		predPayD6: result?.predPayD6 ?? "",
+		predPayD7: result?.predPayD7 ?? "",
+		pred7DPay: result?.pred7DPay ?? "",
+		horizonDays: result?.horizonDays ?? 7,
+		modelLabel: result?.modelLabel ?? "",
+		modelVersion: result?.modelVersion ?? "",
+	}
+}
+
 function normalizeQuery() {
 	queryForm.itemId = String(queryForm.itemId ?? "").trim()
 	queryForm.anchorDateText = queryForm.anchorDate || ""
+}
+
+function clearPredictionSelection() {
+	selectedPredictionRow.value = null
+}
+
+function buildSelectedPredictionParams(row = selectedPredictionRow.value) {
+	if (!row) {
+		return null
+	}
+
+	const itemId = row.itemId ?? ""
+	const anchorDate = row.anchorDate
+		? dayjs(row.anchorDate).format("YYYY-MM-DD")
+		: ""
+
+	if (!itemId || !anchorDate) {
+		return null
+	}
+
+	return {
+		itemId: String(itemId),
+		anchorDate,
+	}
+}
+
+function validateOnlinePredictSelection() {
+	if (!selectedPredictionRow.value) {
+		message("请先勾选一条商品记录，再执行在线预测", { type: "warning" })
+		return null
+	}
+
+	const params = buildSelectedPredictionParams()
+	if (!params) {
+		message("当前勾选记录缺少商品ID或锚定日期，无法执行在线预测", {
+			type: "warning",
+		})
+		return null
+	}
+
+	return params
 }
 
 function handleSearch() {
@@ -202,12 +348,59 @@ function handleSearch() {
 	resetPage()
 }
 
+async function handleOnlinePredict() {
+	const selectedParams = validateOnlinePredictSelection()
+	if (!selectedParams) {
+		return
+	}
+
+	predicting.value = true
+
+	try {
+		const featureRow = selectedPredictionRow.value
+		const result = await predictSalesForecastOnlineApi({
+			itemId: selectedParams.itemId,
+			anchorDate: selectedParams.anchorDate,
+			horizonDays: 7,
+			featureData: featureRow ?? {},
+		})
+
+		if (!result?.success) {
+			message(result?.message || "在线预测失败，请检查模型文件是否已放到指定目录", {
+				type: "error",
+			})
+			return
+		}
+
+		onlinePrediction.value = result
+		latestOnlinePredictionSnapshot.value = buildOnlinePredictionSnapshot(
+			featureRow,
+			result,
+		)
+		message("在线预测完成", { type: "success" })
+	} catch (error) {
+		message(error?.message || "在线预测失败", { type: "error" })
+	} finally {
+		predicting.value = false
+	}
+}
+
 function handleReset() {
 	isSearchMode.value = false
+	onlinePrediction.value = null
+	latestOnlinePredictionSnapshot.value = null
 	resetForm()
+	clearPredictionSelection()
 }
 
 const columns = [
+	{
+		label: "",
+		slot: "predictionSelection",
+		width: "52px",
+		align: "center",
+		showOverflowTooltip: false,
+	},
 
 	//  {
 	//    label: "",
@@ -1447,9 +1640,117 @@ const columns = [
 		showOverflowTooltip: false,
 	},
 ].filter(Boolean)
+
+function handlePredictionSelectionToggle(row) {
+	selectedPredictionRow.value = getNextSelectedPredictionRow(
+		selectedPredictionRow.value,
+		row,
+	)
+}
+
+function handleOnlineVisualDetailRedirect() {
+	if (!latestOnlinePredictionSnapshot.value) {
+		message("请先完成在线预测，再查看可视化详情", { type: "warning" })
+		return
+	}
+
+	const predictionKey = saveOnlinePredictionSnapshot(latestOnlinePredictionSnapshot.value)
+	if (!predictionKey) {
+		message("在线预测结果暂存失败，请重试", { type: "error" })
+		return
+	}
+
+	router.push(
+		`/sales-predict-module/rec-sales-forecast-predictions/detail?predictionKey=${predictionKey}`,
+	)
+}
+
 const handelSortChange = ({ prop, order }) => {
 	queryForm.orderColumns = getSortChangeStr({ prop, order })
 	fetchData()
 }
-onBeforeMount(fetchData)
+
+async function loadTableData() {
+	await fetchData()
+	await nextTick()
+	clearPredictionSelection()
+}
+
+watch(
+	listData,
+	async () => {
+		await nextTick()
+		clearPredictionSelection()
+	},
+	{ flush: "post" },
+)
+
+onBeforeMount(loadTableData)
 </script>
+
+<style scoped lang="scss">
+.sales-forecast-online-card {
+	margin-bottom: 18px;
+	border: 1px solid rgba(59, 130, 246, 0.16);
+	background:
+		linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(239, 246, 255, 0.96)),
+		radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%);
+}
+
+.sales-forecast-online-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.sales-forecast-online-title {
+	font-size: 18px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.sales-forecast-online-subtitle {
+	margin-top: 4px;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.sales-forecast-online-summary {
+	margin-bottom: 18px;
+}
+
+.sales-forecast-online-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+	gap: 12px;
+}
+
+.sales-forecast-online-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 16px;
+}
+
+.sales-forecast-online-metric {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.82);
+	border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.sales-forecast-online-metric-label {
+	font-size: 12px;
+	letter-spacing: 0.04em;
+	color: #64748b;
+}
+
+.sales-forecast-online-metric-value {
+	font-size: 22px;
+	line-height: 1;
+	color: #0f172a;
+}
+</style>

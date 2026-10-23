@@ -18,4 +18,21 @@ components.d.ts
 auto-imports.d.ts
 .config
 .kesplus.local.js
-  
+
+# Local credentials, sessions and runtime artifacts
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.kesplus/.session
+/report_generated/
+/fastapi/apps/EMDMPAI/generated/
+/fastapi/pip
+/tmp/
+/kes plus/
+/.archive-work/
+/docs/competition/

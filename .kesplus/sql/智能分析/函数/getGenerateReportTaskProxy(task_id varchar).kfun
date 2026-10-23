@@ -1,0 +1,17 @@
+CREATE OR REPLACE FUNCTION "AiModule"."getGenerateReportTaskProxy"(task_id varchar) RETURN JSON AS
+/**
+ * @Description 查询报告生成任务状态（伪异步兼容）
+ * @Param task_id 任务ID
+ * @Return JSON
+ */
+begin
+  return json_build_object(
+    'success', true,
+    'message', '报告任务已完成',
+    'enhancementTaskId', task_id,
+    'enhancementStatus', 'completed',
+    'data', json_build_object(
+      'content', '当前为伪异步兼容模式，请直接使用 startGenerateReportProxy 返回结果中的 data.content。'
+    )
+  );
+end;

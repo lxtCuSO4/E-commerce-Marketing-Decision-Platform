@@ -1,0 +1,48 @@
+CREATE OR REPLACE FUNCTION "AiModule"."generateMarketingCopyProxy"(payload json) RETURN JSON AS
+/**
+ * @Description 直接调用大模型润色规则生成的营销文案草稿（仅润色摘要与短文案建议）
+ * @Param payload JSON
+ * @Return JSON
+ */
+declare
+  l_system_prompt text := '你是电商营销文案润色助手。下面会提供一份已经基于规则生成的营销文案草稿。请在不改变事实、不虚构卖点的前提下，只润色 summary 和 copies 字段中的 headlineOptions、shortPromotions，使表达更简洁、更有吸引力、更适合展示。不要改写其他字段，不要新增字段，不要输出解释说明。只返回 JSON，字段固定为 summary、copies、llmStatus。';
+  l_prompt_payload json;
+  l_user_prompt text;
+  l_result jsonb;
+begin
+  if payload is null then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_payload',
+      'message', 'payload 不能为空'
+    );
+  end if;
+
+  l_prompt_payload := json_build_object(
+    'itemIds', coalesce(payload -> 'itemIds', '[]'::json),
+    'copyDraft', json_build_object(
+      'summary', coalesce(payload #>> '{copyDraft,summary}', ''),
+      'copies', coalesce(payload -> 'copyDraft' -> 'copies', '[]'::json)
+    )
+  );
+
+  l_user_prompt := '请仅润色以下营销文案草稿中的 summary 和 copies，保持事实不变，并仅返回 JSON：' || chr(10) || l_prompt_payload::text;
+
+  l_result := "AiModule"."callLlmChatCompletions"(
+    l_system_prompt,
+    l_user_prompt,
+    0.2
+  )::jsonb;
+
+  return json_build_object(
+    'success', coalesce((l_result ->> 'success')::boolean, false),
+    'message', coalesce(l_result ->> 'message', '营销文案润色完成'),
+    'errorCode', l_result ->> 'errorCode',
+    'requestUrl', l_result ->> 'requestUrl',
+    'requestPayload', l_result -> 'requestPayload',
+    'rawResponse', l_result,
+    'data', json_build_object(
+      'content', coalesce(l_result ->> 'content', '')
+    )
+  );
+end;

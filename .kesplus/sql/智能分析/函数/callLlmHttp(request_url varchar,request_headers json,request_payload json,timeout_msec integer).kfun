@@ -1,0 +1,84 @@
+CREATE OR REPLACE FUNCTION "AiModule"."callLlmHttp"(
+  request_url varchar,
+  request_headers json,
+  request_payload json,
+  timeout_msec integer
+) RETURN JSON AS
+/**
+ * @Description 通用大模型 HTTP POST 调用函数
+ * @Param request_url 请求地址
+ * @Param request_headers 请求头 JSON
+ * @Param request_payload 请求体 JSON
+ * @Param timeout_msec 超时时间，当前版本暂不动态使用
+ * @Return JSON
+ */
+declare
+  l_response jsonb;
+  l_status integer;
+  l_content jsonb;
+begin
+  if request_url is null or trim(request_url) = '' then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_request_url',
+      'message', 'request_url 不能为空'
+    );
+  end if;
+
+  if request_payload is null then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_request_payload',
+      'message', 'request_payload 不能为空'
+    );
+  end if;
+
+  set http.timeout_msec = 90000;
+
+  select "kesplus_platform"."http".POST(
+    request_url,
+    request_payload,
+    request_headers
+  ) into l_response;
+
+  l_status := coalesce((l_response ->> 'status')::integer, 0);
+  l_content := coalesce(
+    l_response -> 'content',
+    l_response
+  );
+
+  if l_status >= 200 and l_status < 300 then
+    return json_build_object(
+      'success', true,
+      'status', l_status,
+      'requestUrl', request_url,
+      'requestHeaders', request_headers,
+      'requestPayload', request_payload,
+      'rawResponse', l_response,
+      'data', l_content
+    );
+  end if;
+
+  return json_build_object(
+    'success', false,
+    'status', l_status,
+    'errorCode', 'llm_http_error',
+    'message', '大模型 HTTP 调用失败',
+    'requestUrl', request_url,
+    'requestHeaders', request_headers,
+    'requestPayload', request_payload,
+    'rawResponse', l_response,
+    'data', l_content
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'llm_http_exception',
+      'message', '调用大模型 HTTP 接口异常：' || SQLERRM,
+      'requestUrl', request_url,
+      'requestHeaders', request_headers,
+      'requestPayload', request_payload
+    );
+end;

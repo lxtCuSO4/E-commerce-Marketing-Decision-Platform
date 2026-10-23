@@ -3,6 +3,12 @@
 		<div class="emdmp-page-hero user-operations-hero">
 			<div>
 				<p class="emdmp-page-kicker">Operations Center</p>
+				<div class="user-operations-hero-copy">
+					<h1>用户运营与召回</h1>
+					<p>
+						把优先级、分群、任务分组和建议动作组合成一张运营指挥台，让召回目标、行动路径和风险信号在首屏就被看见。
+					</p>
+				</div>
 				<h1 class="emdmp-page-title">用户运营与召回</h1>
 				<p class="emdmp-page-description">
 					围绕复购评分、用户分群、任务分组与建议动作建立“总览 + 分布 + 明细”的运营分析视图。
@@ -665,13 +671,44 @@ onBeforeUnmount(() => {
 
 .user-operations-hero {
 	margin-bottom: 16px;
+	background:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(241, 247, 255, 0.9) 56%, rgba(255, 248, 243, 0.92)),
+		radial-gradient(circle at top left, rgba(59, 130, 246, 0.15), transparent 28%);
+}
+
+.user-operations-hero-copy {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.user-operations-hero-copy h1 {
+	margin: 0;
+	font-family: "Georgia", "Times New Roman", serif;
+	font-size: clamp(34px, 2vw, 50px);
+	line-height: 1.04;
+	letter-spacing: -0.03em;
+	color: #122033;
+}
+
+.user-operations-hero-copy p {
+	margin: 0;
+	max-width: 860px;
+	font-size: 15px;
+	line-height: 1.9;
+	color: #46566d;
+}
+
+.user-operations-hero :deep(.emdmp-page-title),
+.user-operations-hero :deep(.emdmp-page-description) {
+	display: none;
 }
 
 .summary-panel,
 .overview-chart-card,
 .user-operations-panel {
 	border: 1px solid rgba(148, 163, 184, 0.16);
-	box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+	box-shadow: 0 24px 52px rgba(15, 23, 42, 0.08);
 }
 
 .summary-card {
@@ -682,12 +719,15 @@ onBeforeUnmount(() => {
 }
 
 .summary-label {
-	font-size: 14px;
+	font-size: 12px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 	color: #64748b;
 }
 
 .summary-value {
-	font-size: 32px;
+	font-family: "Georgia", "Times New Roman", serif;
+	font-size: clamp(38px, 2.2vw, 52px);
 	font-weight: 700;
 	line-height: 1;
 	color: #0f172a;
@@ -701,7 +741,7 @@ onBeforeUnmount(() => {
 
 .chart-box {
 	width: 100%;
-	height: 320px;
+	height: 340px;
 }
 
 .query-form {

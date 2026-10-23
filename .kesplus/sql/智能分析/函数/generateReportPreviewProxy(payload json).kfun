@@ -1,0 +1,50 @@
+CREATE OR REPLACE FUNCTION "AiModule"."generateReportPreviewProxy"(payload json) RETURN JSON AS
+/**
+ * @Description 直接调用大模型润色规则生成的商业报告草稿（仅润色摘要与建议）
+ * @Param payload JSON
+ * @Return JSON
+ */
+declare
+  l_system_prompt text := '你是电商经营分析润色助手。下面会提供一份已经基于规则生成的商业分析报告草稿。请在不改变事实、不虚构数据的前提下，只润色 summary 和 recommendations 两个字段，使表达更专业、更清晰、更适合经营汇报展示。不要改写其他字段，不要新增字段，不要输出解释说明。只返回 JSON，字段固定为 summary、recommendations、llmStatus。';
+  l_prompt_payload json;
+  l_user_prompt text;
+  l_result jsonb;
+begin
+  if payload is null then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_payload',
+      'message', 'payload 不能为空'
+    );
+  end if;
+
+  l_prompt_payload := json_build_object(
+    'reportType', coalesce(payload ->> 'reportType', 'business'),
+    'itemIds', coalesce(payload -> 'itemIds', '[]'::json),
+    'reportDraft', json_build_object(
+      'reportTitle', coalesce(payload #>> '{reportDraft,reportTitle}', ''),
+      'summary', coalesce(payload #>> '{reportDraft,summary}', ''),
+      'recommendations', coalesce(payload -> 'reportDraft' -> 'recommendations', '[]'::json)
+    )
+  );
+
+  l_user_prompt := '请仅润色以下商业报告草稿中的 summary 和 recommendations，保持事实不变，并仅返回 JSON：' || chr(10) || l_prompt_payload::text;
+
+  l_result := "AiModule"."callLlmChatCompletions"(
+    l_system_prompt,
+    l_user_prompt,
+    0.2
+  )::jsonb;
+
+  return json_build_object(
+    'success', coalesce((l_result ->> 'success')::boolean, false),
+    'message', coalesce(l_result ->> 'message', '报告润色完成'),
+    'errorCode', l_result ->> 'errorCode',
+    'requestUrl', l_result ->> 'requestUrl',
+    'requestPayload', l_result -> 'requestPayload',
+    'rawResponse', l_result,
+    'data', json_build_object(
+      'content', coalesce(l_result ->> 'content', '')
+    )
+  );
+end;

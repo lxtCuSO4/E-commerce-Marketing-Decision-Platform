@@ -1,11 +1,11 @@
 # EMDMP 页面功能说明
 
-本文档用于说明当前项目中各页面的主要功能、入口路径和使用场景。
+本文档用于说明当前项目中各页面的主要功能、入口路径和使用场景，便于产品、开发、测试、演示和项目材料整理时快速定位页面能力。
 
 它与 `AGENTS.md` 的区别是：
 
 - `AGENTS.md`：面向 coding agent 的协作与开发说明
-- `PAGE_FUNCTIONS.md`：面向产品、开发、测试、实施或演示人员的页面功能总览
+- `PAGE_FUNCTIONS.md`：面向项目说明、演示讲解与页面功能梳理的总览
 
 ## 1. 页面总览
 
@@ -15,7 +15,7 @@
 - 数据导入模块：`src/views/data-import-module`
 - 销量预测模块：`src/views/sales-predict-module`
 - AI 模块：`src/views/ai-module`
-- 运营中心模块：`src/views/b-operations-module`
+- 运营分析模块：`src/views/b-operations-module`
 
 ## 2. 登录模块
 
@@ -26,8 +26,8 @@
   - 用户登录系统
   - 进入 Kesplus 主应用
 - 使用场景：
-  - 系统入口页
-  - 账号认证与进入工作台
+  - 系统统一入口
+  - 演示账号登录
 
 ## 3. 数据导入模块
 
@@ -36,13 +36,10 @@
 - 页面文件：`src/views/data-import-module/rec-tmall-item-base/index.vue`
 - 主要功能：
   - 查询商品基础信息
-  - 以卡片流形式展示商品
-  - 展示商品图片、标题、商品 ID、类目、品牌、卖家等核心信息
-  - 支持分页、筛选、编辑、删除
-  - 点击商品卡片进入详情页
-- 页面特点：
-  - 已从传统表格改为偏电商风格的商品卡片展示
-  - 默认每页展示 12 张卡片
+  - 以卡片形式展示商品图片、标题、类目、品牌、卖家等核心字段
+  - 支持分页、搜索、维护、跳转详情
+- 页面价值：
+  - 为 AI 推荐、竞品分析、商品问答提供主数据基础
 
 ### 3.2 商品基础信息详情页
 
@@ -67,8 +64,8 @@
   - 查询商品销量相关数据
   - 展示点击、支付等经营指标
   - 支持基础维护
-- 使用场景：
-  - 为 AI 分析、竞品分析与销量预测提供原始销量数据
+- 页面价值：
+  - 为竞品分析、销量预测、用户行为诊断提供原始经营数据
 
 ### 3.5 商品销量信息表单页
 
@@ -82,8 +79,8 @@
 - 主要功能：
   - 查询商品相似度数据
   - 维护商品之间的相似关系
-- 使用场景：
-  - 为竞品分析、推荐分析提供相似度基础数据
+- 页面价值：
+  - 为竞品分析和推荐分析提供竞品候选基础
 
 ### 3.7 商品相似度表单页
 
@@ -97,11 +94,10 @@
 
 - 页面文件：`src/views/sales-predict-module/rec-tmall-sales-forecast-feature/index.vue`
 - 主要功能：
-  - 展示销量预测所使用的特征数据
+  - 查看销量预测所需特征数据
   - 支持查询、筛选与维护
-- 使用场景：
-  - 查看模型输入特征
-  - 为 AI 分析与趋势判断提供解释基础
+- 页面价值：
+  - 展示模型输入基础，支撑结果解释
 
 ### 4.2 销量预测特征表单页
 
@@ -113,11 +109,17 @@
 
 - 页面文件：`src/views/sales-predict-module/rec-sales-forecast-predictions/index.vue`
 - 主要功能：
-  - 查询销量预测结果
-  - 展示商品未来销量或支付趋势相关结果
-- 使用场景：
-  - 进行商品未来趋势判断
-  - 为推荐分析、竞品分析与 AI 问答提供预测依据
+  - 查看历史预测结果
+  - 调用业务接口查询预测结果与详情
+  - 触发在线销量预测能力
+  - 作为 AI 模块竞品分析和行为分析中的趋势参考来源
+- 页面相关工具：
+  - `rec-sales-forecast-predictions-api.js`
+  - `online-prediction-cache.js`
+  - `prediction-detail-state.js`
+  - `single-prediction-selection.js`
+- 页面价值：
+  - 体现机器学习预测能力与业务决策支持能力
 
 ### 4.4 销量预测结果详情页
 
@@ -125,13 +127,13 @@
 - 访问路径：`/sales-predict-module/rec-sales-forecast-predictions/detail?id=<id>`
 - 页面性质：隐藏页
 - 主要功能：
-  - 用更可视化的方式查看单条预测结果
+  - 以更可视化的方式查看单条预测结果
 
 ### 4.5 销量预测结果表单页
 
 - 页面文件：`src/views/sales-predict-module/rec-sales-forecast-predictions/form.vue`
 - 主要功能：
-  - 维护销量预测结果记录
+  - 维护预测结果记录
 
 ## 5. AI 模块
 
@@ -140,102 +142,108 @@
 - 页面文件：`src/views/ai-module/intelligent-recommendation-report/index.vue`
 - 访问路径：`/ai-module/intelligent-recommendation-report`
 - 页面定位：
-  - 从推荐候选到报告产出的综合分析页
+  - 从推荐候选到 AI 报告输出的综合分析页面
 - 主要功能：
   - 根据关键字查询推荐候选商品
   - 选择商品作为分析对象
   - 生成商业分析报告预览
-  - 下载 PDF 报告
+  - 导出 PDF 报告
   - 生成营销文案
-- 页面结构：
-  - 推荐候选查询区
-  - 商品选择区
-  - AI 分析摘要区
-  - 报告与建议区
-  - 营销文案区
-- 当前链路：
-  - 候选商品：业务接口 `/AiModule/itemRecommendationCandidates`
-  - 报告预览：`POST /api/EMDMPAI/generate-report`
-  - PDF 下载：`POST /api/EMDMPAI/generate-report-pdf`
-  - 营销文案：`POST /api/EMDMPAI/generate-marketing-copy`
-- 当前特点：
-  - 报告预览和 PDF 生成已拆开
-  - 页面内有统一的 `大模型生成中` 提示
-  - 营销文案已内嵌，不是独立子页
+  - 支持异步报告增强任务轮询
+- 当前联动接口：
+  - 业务接口：`/AiModule/itemRecommendationCandidates`
+  - FastAPI：`/api/EMDMPAI/generate-report`
+  - FastAPI：`/api/EMDMPAI/generate-report-pdf`
+  - FastAPI：`/api/EMDMPAI/generate-marketing-copy`
+  - FastAPI：`/api/EMDMPAI/generate-report/start`
+  - FastAPI：`/api/EMDMPAI/generate-report/tasks/{task_id}`
+- 演示价值：
+  - 最能体现“AI 推荐 + 自动报告 + PDF 交付 + 营销文案生成”的综合能力
 
 ### 5.2 竞品智能分析
 
 - 页面文件：`src/views/ai-module/ai-competitor-analysis/index.vue`
 - 访问路径：`/ai-module/ai-competitor-analysis`
 - 页面定位：
-  - 围绕主商品与竞品关系展开的对比分析页
+  - 围绕主商品与竞品关系展开的对比分析页面
 - 主要功能：
-  - 根据标题关键字搜索主商品
-  - 基于 `itemId` 拉取竞品相似度
-  - 展示竞品关系图谱
-  - 展示销量、趋势与规则分析
+  - 按标题关键字检索主商品
+  - 基于 `itemId` 查询竞品相似度
+  - 补齐商品基础信息、销量与预测趋势
+  - 展示规则分析与竞品关系图谱
   - 触发 AI 深度解读
-- 当前链路：
-  - 基础数据走业务接口
-  - AI 深度解读走 `POST /api/EMDMPAI/competitor-analysis`
-- 当前特点：
-  - 先展示规则分析，后触发 AI 深度分析
-  - AI 失败时不会整块空白
+  - 支持异步 AI 增强任务轮询
+- 当前联动接口：
+  - 业务接口：`/DataImportModule/item`
+  - 业务接口：`/DataImportModule/itemSimilarity`
+  - 业务接口：`/DataImportModule/itemSales`
+  - 业务接口：`/SalesPredictModule/salesForecastFeature`
+  - 业务接口：`/SalesPredictModule/salesForecastPredictions`
+  - FastAPI：`/api/EMDMPAI/competitor-analysis`
+  - FastAPI：`/api/EMDMPAI/competitor-analysis/start`
+  - FastAPI：`/api/EMDMPAI/competitor-analysis/tasks/{task_id}`
+- 演示价值：
+  - 体现“业务规则分析 + AI 深度分析 + 竞品图谱展示”的能力融合
 
 ### 5.3 商品问答助手
 
 - 页面文件：`src/views/ai-module/ai-product-qa/index.vue`
 - 访问路径：`/ai-module/ai-product-qa`
 - 页面定位：
-  - 面向业务数据问答的聊天助手
+  - 面向商品与经营数据问答的聊天式助手
 - 主要功能：
   - 自然语言提问
-  - 基于业务数据返回分析结论
   - 热门问题推荐
-- 当前链路：
-  - 问答：`POST /api/EMDMPAI/product-qa/chat`
-  - 热门问题：`GET /api/EMDMPAI/product-qa/hot-questions`
+  - 展示基于业务数据的分析回答
+  - 通过业务代理获取回答，失败时显示回退提示；当前未接入直连自动重试
+- 当前联动接口：
+  - 业务代理：`/AiModule/productQaChatProxy`
+  - FastAPI：`/api/EMDMPAI/product-qa/chat`
+  - FastAPI：`/api/EMDMPAI/product-qa/hot-questions`
 - 页面特点：
-  - 前端只展示聊天正文
-  - 后端仍保留结构化调试信息供扩展使用
+  - 前端主要呈现聊天正文
+  - 后端承担意图识别、商品锚点识别、只读 SQL 生成与数据库查询
+  - 传输层会对问题文本与上下文做编码，降低中文链路损坏风险
+- 演示价值：
+  - 体现“业务数据库 + LLM 问答”的智能分析能力
 
 ### 5.4 用户行为分析
 
 - 页面文件：`src/views/ai-module/user-behavior-analysis/index.vue`
 - 访问路径：`/ai-module/user-behavior-analysis`
 - 页面定位：
-  - 以商品视角或商家视角查看点击、收藏、加购、支付等行为链路，并生成 AI 诊断
+  - 从商品视角或商家视角分析用户行为漏斗并生成 AI 诊断
 - 主要功能：
   - 切换商品视角或商家视角
-  - 按关键字、商品 ID、商家 ID、类目、锚定日期、时间窗口、行为标签进行筛选
-  - 展示行为概览指标卡
-  - 展示漏斗图或行为层级分布图
-  - 展示行为标签分布
-  - 查看行为诊断列表
-  - 对当前结果集或勾选记录生成 AI 诊断
-- 当前链路：
-  - 汇总：`/AiModule/userBehaviorAnalysisSummaryV2`
-  - 列表：`/AiModule/userBehaviorAnalysisByPageV2`
-  - 兜底：`/AiModule/itemRecommendationCandidates`
-  - AI 诊断：`POST /api/EMDMPAI/generate-user-behavior-diagnosis/start`
-  - 诊断轮询：`GET /api/EMDMPAI/generate-user-behavior-diagnosis/tasks/{taskId}`
-- 当前特点：
-  - 先显示规则诊断，再异步增强为大模型润色结果
-  - 大模型失败时回退到规则诊断
-  - 页面右侧会显示模型状态、建议动作与风险提示
+  - 依据多条件筛选行为数据
+  - 展示行为概览卡片、漏斗图、行为层级图与标签分布
+  - 基于当前结果集生成 AI 行为诊断
+  - 通过业务代理触发异步增强并轮询任务状态
+- 当前联动接口：
+  - 业务接口：`/AiModule/userBehaviorAnalysisSummaryV2`
+  - 业务接口：`/AiModule/userBehaviorAnalysisByPageV2`
+  - 兜底接口：`/AiModule/itemRecommendationCandidates`
+  - 业务代理：`/AiModule/generateUserBehaviorDiagnosisProxy`
+  - 业务代理：`/AiModule/startGenerateUserBehaviorDiagnosisProxy`
+  - 业务代理：`/AiModule/getGenerateUserBehaviorDiagnosisTaskProxy`
+  - FastAPI：`/api/EMDMPAI/generate-user-behavior-diagnosis`
+  - FastAPI：`/api/EMDMPAI/generate-user-behavior-diagnosis/start`
+  - FastAPI：`/api/EMDMPAI/generate-user-behavior-diagnosis/tasks/{task_id}`
+- 演示价值：
+  - 体现“规则诊断 + 异步 AI 增强 + 运营建议输出”的场景落地能力
 
-## 6. 运营中心模块
+## 6. 运营分析模块
 
 ### 6.1 运营总览与商家诊断
 
 - 页面文件：`src/views/b-operations-module/overview-merchant-diagnostics/index.vue`
 - 访问路径：`/b-operations-module/overview-merchant-diagnostics`
 - 主要功能：
-  - 查看运营总览
-  - 分析商家诊断相关指标
+  - 查看运营总览指标
+  - 查看商家经营诊断相关信息
 - 使用场景：
-  - 运营观察
-  - 商家经营状态判断
+  - 运营监控
+  - 商家状态判断
 
 ### 6.2 用户运营与召回
 
@@ -245,11 +253,11 @@
   - 查看用户运营与召回相关数据
 - 使用场景：
   - 用户分层运营
-  - 召回与精细化运营
+  - 用户召回与精细化运营
 
 ## 7. 当前已挂载但非菜单主入口页面
 
-这些页面通常不会直接出现在菜单中，但已在运行时路由中挂载：
+这些页面通常不会直接出现在菜单中，但已经在运行时路由中挂载：
 
 - 商品基础信息详情页：
   - `src/views/data-import-module/rec-tmall-item-base/detail.vue`
@@ -260,23 +268,43 @@
 
 ## 8. 页面与后端联动提示
 
-- AI 页面统一通过 `src/views/ai-module/utils/fastapi-url.js` 解析 FastAPI 地址
-- 默认优先读取运行时注入的：
+- AI 页面统一通过 `src/views/ai-module/utils/fastapi-url.js` 处理 FastAPI 地址。
+- 当前地址解析优先级为：
   - `__EMDMP_FASTAPI_BASE_URL`
   - `__KESPLUS_FASTAPI_BASE_URL`
-- 未注入时回退到：
-  - `http://fastapi:54903`
-- 如果页面能打开但 AI 功能报错，优先检查：
+  - 当前浏览器 `protocol + hostname + :54903`
+  - 默认 `http://127.0.0.1:54903`
+- 当前 FastAPI 服务入口为 `fastapi/main.py`；`EMDMP_API_SOURCE=auto` 按修改时间选择模型包或 fallback，同时间选 fallback。启动前设置进程变量 `bundle` 或 `fastapi` 可固定来源。
+- 当前报告与 PDF 静态文件目录为 `report_generated`，运行时通过 `/files/...` 暴露。
+- 若页面能打开但 AI 功能报错，应优先检查：
   - FastAPI 服务是否启动
-  - `.env` 配置是否完整
-  - 当前运行的 FastAPI 是否是最新代码
+  - 当前运行中的 FastAPI 是否为最新代码
+  - `models/EMDMP/apis` 是否与 `fastapi/main.py` 的加载逻辑匹配
+  - `.env` 中模型与数据库配置是否完整
 
-## 9. 文档维护建议
+## 9. 建议重点展示页面
+
+- 智能推荐与报告：
+  - `src/views/ai-module/intelligent-recommendation-report/index.vue`
+- 竞品智能分析：
+  - `src/views/ai-module/ai-competitor-analysis/index.vue`
+- 商品问答助手：
+  - `src/views/ai-module/ai-product-qa/index.vue`
+- 用户行为分析：
+  - `src/views/ai-module/user-behavior-analysis/index.vue`
+- 销量预测结果展示：
+  - `src/views/sales-predict-module/rec-sales-forecast-predictions/index.vue`
+- 商品基础数据页：
+  - `src/views/data-import-module/rec-tmall-item-base/index.vue`
+- 系统挂载与菜单入口：
+  - `src/app.jsx`
+
+## 10. 文档维护建议
 
 当项目出现以下变化时，应同步更新本文档：
 
 - 新增页面
 - 页面更名或迁移目录
 - 页面主功能发生明显变化
-- 页面与 FastAPI 的联动链路发生变化
+- 页面与 FastAPI 或业务代理的联动链路发生变化
 - 新增隐藏页、详情页、表单页或特殊入口页

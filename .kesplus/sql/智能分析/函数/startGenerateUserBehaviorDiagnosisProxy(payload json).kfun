@@ -1,0 +1,23 @@
+CREATE OR REPLACE FUNCTION "AiModule"."startGenerateUserBehaviorDiagnosisProxy"(payload json) RETURN JSON AS
+/**
+ * @Description 启动用户行为诊断任务（伪异步）
+ * @Param payload JSON
+ * @Return JSON
+ */
+declare
+  l_task_id varchar := replace(gen_random_uuid()::varchar, '-', '');
+  l_result jsonb;
+begin
+  l_result := "AiModule"."generateUserBehaviorDiagnosisProxy"(payload)::jsonb;
+
+  return json_build_object(
+    'success', coalesce((l_result ->> 'success')::boolean, false),
+    'message', coalesce(l_result ->> 'message', '用户行为诊断任务已启动'),
+    'enhancementTaskId', l_task_id,
+    'enhancementStatus', 'completed',
+    'requestUrl', l_result ->> 'requestUrl',
+    'requestPayload', l_result -> 'requestPayload',
+    'rawResponse', l_result,
+    'data', l_result -> 'data'
+  );
+end;

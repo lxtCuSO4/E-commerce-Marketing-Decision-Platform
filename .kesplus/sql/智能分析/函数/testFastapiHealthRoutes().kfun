@@ -1,0 +1,185 @@
+create or replace function "AiModule"."testFastapiHealthRoutes"() return JSON as
+/**
+ * @Description 验证 FastAPI 健康接口与商品问答相关数据检索链路
+ * @Return JSON
+ */
+declare
+  l_response_emdmp jsonb;
+  l_response_emdmpai jsonb;
+  l_error_emdmp varchar;
+  l_error_emdmpai varchar;
+
+  l_items_by_keyword_autumn jsonb := '[]'::jsonb;
+  l_items_by_keyword_women jsonb := '[]'::jsonb;
+  l_item_283638 jsonb := '[]'::jsonb;
+  l_sales_283638 jsonb := '[]'::jsonb;
+  l_pred_283638 jsonb := '[]'::jsonb;
+
+  l_error_items_by_keyword_autumn varchar;
+  l_error_items_by_keyword_women varchar;
+  l_error_item_283638 varchar;
+  l_error_sales_283638 varchar;
+  l_error_pred_283638 varchar;
+begin
+  set http.timeout_msec = 10000;
+
+  /*
+   * 1. FastAPI 健康检查
+   */
+  begin
+    select "kesplus_platform"."http".GET(
+      'http://fastapi:54903/api/EMDMP/health'
+    ) into l_response_emdmp;
+  exception
+    when others then
+      l_error_emdmp := SQLERRM;
+  end;
+
+  begin
+    select "kesplus_platform"."http".GET(
+      'http://fastapi:54903/api/EMDMPAI/health'
+    ) into l_response_emdmpai;
+  exception
+    when others then
+      l_error_emdmpai := SQLERRM;
+  end;
+
+  /*
+   * 2. 秋装关键词检索
+   */
+  begin
+    l_items_by_keyword_autumn := coalesce(
+      "DataImportModule"."getItemByParams"('秋装', null)::jsonb,
+      '[]'::jsonb
+    );
+  exception
+    when others then
+      l_error_items_by_keyword_autumn := SQLERRM;
+  end;
+
+  /*
+   * 3. 女装关键词检索
+   */
+  begin
+    l_items_by_keyword_women := coalesce(
+      "DataImportModule"."getItemByParams"('女装', null)::jsonb,
+      '[]'::jsonb
+    );
+  exception
+    when others then
+      l_error_items_by_keyword_women := SQLERRM;
+  end;
+
+  /*
+   * 4. 定点检查 FastAPI 曾命中的商品 283638
+   */
+  begin
+    l_item_283638 := coalesce(
+      "DataImportModule"."getItemByParams"(null, 283638)::jsonb,
+      '[]'::jsonb
+    );
+  exception
+    when others then
+      l_error_item_283638 := SQLERRM;
+  end;
+
+  begin
+    l_sales_283638 := coalesce(
+      "DataImportModule"."getItemSalesByItemId"(283638)::jsonb,
+      '[]'::jsonb
+    );
+  exception
+    when others then
+      l_error_sales_283638 := SQLERRM;
+  end;
+
+  begin
+    l_pred_283638 := coalesce(
+      "SalesPredictModule"."getSalesForecastPredictionsByParams"(283638, null)::jsonb,
+      '[]'::jsonb
+    );
+  exception
+    when others then
+      l_error_pred_283638 := SQLERRM;
+  end;
+
+  return json_build_object(
+    'emdmp', json_build_object(
+      'url', 'http://fastapi:54903/api/EMDMP/health',
+      'error', l_error_emdmp,
+      'response', l_response_emdmp
+    ),
+    'emdmpai', json_build_object(
+      'url', 'http://fastapi:54903/api/EMDMPAI/health',
+      'error', l_error_emdmpai,
+      'response', l_response_emdmpai
+    ),
+    'productQaDataCheck', json_build_object(
+      'keywordLookupAutumn', json_build_object(
+        'keyword', '秋装',
+        'error', l_error_items_by_keyword_autumn,
+        'rowCount', jsonb_array_length(coalesce(l_items_by_keyword_autumn, '[]'::jsonb)),
+        'sample', (
+          select coalesce(jsonb_agg(x), '[]'::jsonb)
+          from (
+            select value
+            from jsonb_array_elements(coalesce(l_items_by_keyword_autumn, '[]'::jsonb))
+            limit 5
+          ) t(x)
+        )
+      ),
+      'keywordLookupWomen', json_build_object(
+        'keyword', '女装',
+        'error', l_error_items_by_keyword_women,
+        'rowCount', jsonb_array_length(coalesce(l_items_by_keyword_women, '[]'::jsonb)),
+        'sample', (
+          select coalesce(jsonb_agg(x), '[]'::jsonb)
+          from (
+            select value
+            from jsonb_array_elements(coalesce(l_items_by_keyword_women, '[]'::jsonb))
+            limit 5
+          ) t(x)
+        )
+      ),
+      'item283638', json_build_object(
+        'itemId', 283638,
+        'error', l_error_item_283638,
+        'rowCount', jsonb_array_length(coalesce(l_item_283638, '[]'::jsonb)),
+        'sample', (
+          select coalesce(jsonb_agg(x), '[]'::jsonb)
+          from (
+            select value
+            from jsonb_array_elements(coalesce(l_item_283638, '[]'::jsonb))
+            limit 3
+          ) t(x)
+        )
+      ),
+      'item283638Sales', json_build_object(
+        'itemId', 283638,
+        'error', l_error_sales_283638,
+        'rowCount', jsonb_array_length(coalesce(l_sales_283638, '[]'::jsonb)),
+        'sample', (
+          select coalesce(jsonb_agg(x), '[]'::jsonb)
+          from (
+            select value
+            from jsonb_array_elements(coalesce(l_sales_283638, '[]'::jsonb))
+            limit 3
+          ) t(x)
+        )
+      ),
+      'item283638Prediction', json_build_object(
+        'itemId', 283638,
+        'error', l_error_pred_283638,
+        'rowCount', jsonb_array_length(coalesce(l_pred_283638, '[]'::jsonb)),
+        'sample', (
+          select coalesce(jsonb_agg(x), '[]'::jsonb)
+          from (
+            select value
+            from jsonb_array_elements(coalesce(l_pred_283638, '[]'::jsonb))
+            limit 3
+          ) t(x)
+        )
+      )
+    )
+  );
+end;

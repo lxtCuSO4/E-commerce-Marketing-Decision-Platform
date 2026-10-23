@@ -1,0 +1,24 @@
+{
+  "app_info": {
+    "display_name": "EMDMP Forecast Mini",
+    "author": "Codex",
+    "student_id": "",
+    "description": "Minimal sales forecast model bundle for EMDMP"
+  },
+  "api_configurations": [
+    {
+      "api_file": "sales_forecast_api.py",
+      "endpoints": [
+        {
+          "path": "/predict",
+          "http_method": "POST",
+          "handler_function": "predict",
+          "title": "Sales Forecast Predict",
+          "description": "Run the sales forecast model with feature snapshot input",
+          "timeout_seconds": 30,
+          "model_path": "models/sales_forecast_lightgbm.pkl"
+        }
+      ]
+    }
+  ]
+}

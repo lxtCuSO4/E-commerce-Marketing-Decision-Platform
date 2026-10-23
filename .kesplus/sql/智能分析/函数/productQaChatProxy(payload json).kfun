@@ -1,0 +1,501 @@
+CREATE OR REPLACE FUNCTION "AiModule"."productQaChatProxy"(payload json) RETURN JSON AS
+/**
+ * @Description 商品问答代理：查数类直接规则返回，解释类检索后再接 LLM
+ * @Param payload JSON
+ * @Return JSON
+ */
+declare
+  l_version text := 'qa-proxy-v11-rule-for-facts-llm-for-explanations';
+  l_transport_prefix text := '__EMDMP_B64__:';
+
+  l_question_raw text := coalesce(payload #>> '{question}', '');
+  l_draft_answer_raw text := coalesce(payload #>> '{draftAnswer}', '');
+  l_item_title_raw text := coalesce(payload #>> '{itemContext,title}', '');
+  l_category_raw text := coalesce(payload #>> '{itemContext,category}', '');
+  l_item_id_raw text := coalesce(payload #>> '{itemContext,itemId}', '');
+
+  l_question text := '';
+  l_draft_answer_from_front text := '';
+  l_item_title text := '';
+  l_category text := '';
+  l_title_keyword text := '';
+  l_question_type text := 'general';
+
+  l_context_item_id integer := null;
+
+  l_item_rows jsonb := '[]'::jsonb;
+  l_item_rows_debug_autumn jsonb := '[]'::jsonb;
+  l_item_rows_debug_women jsonb := '[]'::jsonb;
+
+  l_sales_rows jsonb := '[]'::jsonb;
+  l_pred_rows jsonb := '[]'::jsonb;
+
+  l_sales_row jsonb := '{}'::jsonb;
+  l_pred_row jsonb := '{}'::jsonb;
+  l_top_item jsonb := '{}'::jsonb;
+
+  l_best_pay_cnt numeric := -1;
+  l_best_pay_cnt_30d numeric := -1;
+  l_best_click_cnt numeric := -1;
+
+  l_curr_item_id integer := null;
+  l_curr_pay_cnt numeric := 0;
+  l_curr_pay_cnt_30d numeric := 0;
+  l_curr_click_cnt numeric := 0;
+  l_curr_pred_7d_pay numeric := 0;
+
+  l_rule_answer text := '';
+  l_final_answer text := '';
+  l_analysis_meta jsonb := '{}'::jsonb;
+
+  l_should_call_llm boolean := false;
+  l_system_prompt text := '你是电商商品问答助手。下面会提供一个已经完成数据检索和规则整理的回答草稿。请在不虚构业务数据、不补造结论的前提下，将这份回答整合为更自然、更简洁、更专业的回复。若草稿已经说明信息不足，请保留这一结论并明确需要补充的条件。只返回 JSON，字段固定为 answer、content、llmStatus。';
+  l_prompt_payload json;
+  l_llm_result jsonb := '{}'::jsonb;
+
+  r_item record;
+begin
+  if payload is null then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_payload',
+      'message', 'payload 不能为空'
+    );
+  end if;
+
+  if l_question_raw like l_transport_prefix || '%' then
+    l_question := coalesce(public.kes_base64_decrypt(substr(l_question_raw, length(l_transport_prefix) + 1)), '');
+  else
+    l_question := l_question_raw;
+  end if;
+
+  if l_draft_answer_raw like l_transport_prefix || '%' then
+    l_draft_answer_from_front := coalesce(public.kes_base64_decrypt(substr(l_draft_answer_raw, length(l_transport_prefix) + 1)), '');
+  else
+    l_draft_answer_from_front := l_draft_answer_raw;
+  end if;
+
+  if l_item_title_raw like l_transport_prefix || '%' then
+    l_item_title := coalesce(public.kes_base64_decrypt(substr(l_item_title_raw, length(l_transport_prefix) + 1)), '');
+  else
+    l_item_title := l_item_title_raw;
+  end if;
+
+  if l_category_raw like l_transport_prefix || '%' then
+    l_category := coalesce(public.kes_base64_decrypt(substr(l_category_raw, length(l_transport_prefix) + 1)), '');
+  else
+    l_category := l_category_raw;
+  end if;
+
+  if coalesce(l_item_id_raw, '') ~ '^\d+$' then
+    l_context_item_id := l_item_id_raw::integer;
+  elsif substring(l_question from '(?:商品\s*ID|商品ID|item\s*id|itemId|ID)\s*[:：]?\s*(\d{3,})') is not null then
+    l_context_item_id := substring(l_question from '(?:商品\s*ID|商品ID|item\s*id|itemId|ID)\s*[:：]?\s*(\d{3,})')::integer;
+  end if;
+
+  /*
+   * 问题分类：先判断“原因/解释”，再判断推广/风险/查数/头部商品
+   */
+  if
+    position('原因' in l_question) > 0 or
+    position('为什么' in l_question) > 0 or
+    position('为何' in l_question) > 0 or
+    position('依据' in l_question) > 0
+  then
+    l_question_type := 'reason';
+  elsif
+    position('值得推广' in l_question) > 0 or
+    position('继续推广' in l_question) > 0 or
+    position('继续加大推广' in l_question) > 0 or
+    position('还值得投放' in l_question) > 0
+  then
+    l_question_type := 'promotion';
+  elsif
+    position('风险' in l_question) > 0 or
+    position('隐患' in l_question) > 0 or
+    position('问题' in l_question) > 0
+  then
+    l_question_type := 'risk';
+  elsif
+    position('最高' in l_question) > 0 or
+    position('最好' in l_question) > 0 or
+    position('哪件' in l_question) > 0 or
+    position('哪个' in l_question) > 0 or
+    position('卖得最好' in l_question) > 0 or
+    position('销量最高' in l_question) > 0
+  then
+    l_question_type := 'top_item';
+  elsif
+    position('多少' in l_question) > 0 or
+    position('几次' in l_question) > 0 or
+    position('点击' in l_question) > 0 or
+    position('支付' in l_question) > 0 or
+    position('预测' in l_question) > 0 or
+    position('近30天' in l_question) > 0 or
+    position('最近30天' in l_question) > 0 or
+    position('表现' in l_question) > 0 or
+    position('怎么样' in l_question) > 0
+  then
+    l_question_type := 'metric_lookup';
+  else
+    l_question_type := 'general';
+  end if;
+
+  /*
+   * 关键词提取
+   */
+  if position('秋装' in l_question) > 0 then
+    l_title_keyword := '秋装';
+  elsif position('冬装' in l_question) > 0 then
+    l_title_keyword := '冬装';
+  elsif position('夏装' in l_question) > 0 then
+    l_title_keyword := '夏装';
+  elsif position('春装' in l_question) > 0 then
+    l_title_keyword := '春装';
+  elsif position('女装' in l_question) > 0 then
+    l_title_keyword := '女装';
+  elsif position('男装' in l_question) > 0 then
+    l_title_keyword := '男装';
+  elsif position('连衣裙' in l_question) > 0 then
+    l_title_keyword := '连衣裙';
+  elsif position('羽绒服' in l_question) > 0 then
+    l_title_keyword := '羽绒服';
+  elsif position('外套' in l_question) > 0 then
+    l_title_keyword := '外套';
+  elsif position('衬衫' in l_question) > 0 then
+    l_title_keyword := '衬衫';
+  elsif position('裤装' in l_question) > 0 then
+    l_title_keyword := '裤装';
+  elsif position('毛衣' in l_question) > 0 then
+    l_title_keyword := '毛衣';
+  elsif position('针织衫' in l_question) > 0 then
+    l_title_keyword := '针织衫';
+  elsif position('打底衫' in l_question) > 0 then
+    l_title_keyword := '打底衫';
+  elsif position('卫衣' in l_question) > 0 then
+    l_title_keyword := '卫衣';
+  elsif position('短袖' in l_question) > 0 then
+    l_title_keyword := '短袖';
+  elsif position('长袖' in l_question) > 0 then
+    l_title_keyword := '长袖';
+  elsif trim(coalesce(l_item_title, '')) <> '' then
+    l_title_keyword := trim(l_item_title);
+  elsif trim(coalesce(l_category, '')) <> '' then
+    l_title_keyword := trim(l_category);
+  end if;
+
+  /*
+   * 调试查询
+   */
+  l_item_rows_debug_autumn := coalesce(
+    "DataImportModule"."getItemByParams"('秋装', null)::jsonb,
+    '[]'::jsonb
+  );
+
+  l_item_rows_debug_women := coalesce(
+    "DataImportModule"."getItemByParams"('女装', null)::jsonb,
+    '[]'::jsonb
+  );
+
+  /*
+   * 主检索
+   */
+  if l_context_item_id is not null then
+    l_item_rows := coalesce(
+      "DataImportModule"."getItemByParams"(null, l_context_item_id)::jsonb,
+      '[]'::jsonb
+    );
+  elsif l_title_keyword = '秋装' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('秋装', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '冬装' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('冬装', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '夏装' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('夏装', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '春装' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('春装', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '女装' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('女装', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '男装' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('男装', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '外套' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('外套', null)::jsonb, '[]'::jsonb);
+  elsif l_title_keyword = '衬衫' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"('衬衫', null)::jsonb, '[]'::jsonb);
+  elsif trim(coalesce(l_title_keyword, '')) <> '' then
+    l_item_rows := coalesce("DataImportModule"."getItemByParams"(l_title_keyword, null)::jsonb, '[]'::jsonb);
+  end if;
+
+  /*
+   * 排序出头部商品/代表商品
+   */
+  for r_item in
+    select value
+    from jsonb_array_elements(coalesce(l_item_rows, '[]'::jsonb))
+  loop
+    if coalesce(r_item.value ->> 'itemId', '') !~ '^\d+$' then
+      continue;
+    end if;
+
+    l_curr_item_id := (r_item.value ->> 'itemId')::integer;
+
+    l_sales_rows := coalesce(
+      "DataImportModule"."getItemSalesByItemId"(l_curr_item_id)::jsonb,
+      '[]'::jsonb
+    );
+
+    l_sales_row := '{}'::jsonb;
+    select coalesce(value, '{}'::jsonb)
+      into l_sales_row
+    from jsonb_array_elements(coalesce(l_sales_rows, '[]'::jsonb)) t(value)
+    limit 1;
+
+    l_pred_rows := coalesce(
+      "SalesPredictModule"."getSalesForecastPredictionsByParams"(l_curr_item_id, null)::jsonb,
+      '[]'::jsonb
+    );
+
+    l_pred_row := '{}'::jsonb;
+    select coalesce(value, '{}'::jsonb)
+      into l_pred_row
+    from jsonb_array_elements(coalesce(l_pred_rows, '[]'::jsonb)) t(value)
+    order by coalesce(value ->> 'anchorDate', '') desc
+    limit 1;
+
+    l_curr_pay_cnt := coalesce(nullif(l_sales_row ->> 'payCnt', '')::numeric, 0);
+    l_curr_click_cnt := coalesce(nullif(l_sales_row ->> 'clickCnt', '')::numeric, 0);
+    l_curr_pay_cnt_30d := coalesce(nullif(l_pred_row ->> 'payCnt30D', '')::numeric, 0);
+    l_curr_pred_7d_pay := coalesce(nullif(l_pred_row ->> 'pred7DPay', '')::numeric, 0);
+
+    if
+      l_curr_pay_cnt > l_best_pay_cnt or
+      (l_curr_pay_cnt = l_best_pay_cnt and l_curr_pay_cnt_30d > l_best_pay_cnt_30d) or
+      (l_curr_pay_cnt = l_best_pay_cnt and l_curr_pay_cnt_30d = l_best_pay_cnt_30d and l_curr_click_cnt > l_best_click_cnt)
+    then
+      l_best_pay_cnt := l_curr_pay_cnt;
+      l_best_pay_cnt_30d := l_curr_pay_cnt_30d;
+      l_best_click_cnt := l_curr_click_cnt;
+
+      l_top_item := jsonb_build_object(
+        'itemId', l_curr_item_id,
+        'title', coalesce(r_item.value ->> 'title', ''),
+        'category', coalesce(r_item.value ->> 'category', ''),
+        'sellerId', coalesce(r_item.value ->> 'sellerId', ''),
+        'clickCnt', l_curr_click_cnt,
+        'payCnt', l_curr_pay_cnt,
+        'payCnt30D', l_curr_pay_cnt_30d,
+        'pred7DPay', l_curr_pred_7d_pay
+      );
+    end if;
+  end loop;
+
+  /*
+   * 规则草稿
+   */
+  if l_top_item = '{}'::jsonb then
+    l_rule_answer := case
+      when trim(coalesce(l_draft_answer_from_front, '')) <> '' then l_draft_answer_from_front
+      else '当前暂未搜索到可直接回答该问题的商品结果。建议补充商品ID、标题关键词、类目或时间范围后再试。'
+    end;
+  elsif l_question_type = 'top_item' then
+    l_rule_answer := format(
+      '目前搜索到的候选商品里，销量最高的是商品 ID %s %s。它当前累计支付达到 %s，近30天支付还有 %s，累计点击为 %s，未来7天预测支付为 %s，建议优先作为重点关注对象。',
+      coalesce(l_top_item ->> 'itemId', '-'),
+      coalesce(l_top_item ->> 'title', '当前商品'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt30D')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'clickCnt')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'pred7DPay')::numeric, 0), 0)::text, '0')
+    );
+  elsif l_question_type = 'metric_lookup' then
+    l_rule_answer := format(
+      '%s 当前累计点击约 %s，累计支付约 %s，近30天支付约 %s，未来7天预测支付约 %s。',
+      coalesce(l_top_item ->> 'title', '当前商品'),
+      coalesce(round(coalesce((l_top_item ->> 'clickCnt')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt30D')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'pred7DPay')::numeric, 0), 0)::text, '0')
+    );
+  elsif l_question_type = 'promotion' then
+    if coalesce((l_top_item ->> 'pred7DPay')::numeric, 0) > 0 or coalesce((l_top_item ->> 'payCnt30D')::numeric, 0) > 0 then
+      l_rule_answer := format(
+        '%s 当前仍值得继续推广。它近30天仍有一定成交，且短期预测仍有承接，说明近期经营延续性还在。',
+        coalesce(l_top_item ->> 'title', '当前商品')
+      );
+    else
+      l_rule_answer := format(
+        '%s 当前不太适合继续加大推广。它虽然已有一定累计支付，但近30天成交偏弱，且未来7天预测支付为 0，短期承接不足。',
+        coalesce(l_top_item ->> 'title', '当前商品')
+      );
+    end if;
+  elsif l_question_type = 'reason' then
+    l_rule_answer := format(
+      '%s 当前不建议继续加大推广，主要原因有三点：第一，近30天支付约为 %s，最近持续成交信号偏弱；第二，未来7天预测支付约为 %s，短期承接不足；第三，虽然累计点击约为 %s、累计支付约为 %s，说明它有过流量和成交基础，但继续放量前更适合先优化转化效率。',
+      coalesce(l_top_item ->> 'title', '当前商品'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt30D')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'pred7DPay')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'clickCnt')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt')::numeric, 0), 0)::text, '0')
+    );
+  elsif l_question_type = 'risk' then
+    if coalesce((l_top_item ->> 'pred7DPay')::numeric, 0) <= 0 then
+      l_rule_answer := format(
+        '%s 当前最大的经营风险是后续成交承接偏弱。虽然已有累计点击和累计支付基础，但未来7天预测支付为 0，说明短期延续性不足。',
+        coalesce(l_top_item ->> 'title', '当前商品')
+      );
+    else
+      l_rule_answer := format(
+        '%s 当前的主要风险在于流量与支付承接是否能继续稳定，建议持续观察点击和支付波动。',
+        coalesce(l_top_item ->> 'title', '当前商品')
+      );
+    end if;
+  else
+    l_rule_answer := format(
+      '围绕 %s，我先给你一个可执行结论：它当前已有一定经营基础，累计点击约 %s，累计支付约 %s，建议结合近30天成交和未来7天预测继续判断。',
+      coalesce(l_top_item ->> 'title', '当前商品'),
+      coalesce(round(coalesce((l_top_item ->> 'clickCnt')::numeric, 0), 0)::text, '0'),
+      coalesce(round(coalesce((l_top_item ->> 'payCnt')::numeric, 0), 0)::text, '0')
+    );
+  end if;
+
+  l_analysis_meta := jsonb_build_object(
+    'modules', jsonb_build_array('DataImportModule', 'SalesPredictModule', 'AiModule'),
+    'tables', jsonb_build_array(
+      'DataImportModule.rec_tmall_item_base',
+      'DataImportModule.rec_tmall_item_sales',
+      'SalesPredictModule.rec_sales_forecast_predictions'
+    ),
+    'metrics', jsonb_build_array('clickCnt', 'payCnt', 'payCnt30D', 'pred7DPay'),
+    'filters', jsonb_build_array(
+      case when l_context_item_id is not null then 'itemId=' || l_context_item_id::text else null end,
+      case when trim(coalesce(l_title_keyword, '')) <> '' then 'keyword=' || l_title_keyword else null end
+    ),
+    'highlights', jsonb_build_array(
+      case when coalesce(l_top_item ->> 'title', '') <> '' then l_top_item ->> 'title' else null end,
+      case when coalesce(l_top_item ->> 'payCnt', '') <> '' then '累计支付=' || round(coalesce((l_top_item ->> 'payCnt')::numeric, 0), 0)::text else null end,
+      case when coalesce(l_top_item ->> 'payCnt30D', '') <> '' then '近30天支付=' || round(coalesce((l_top_item ->> 'payCnt30D')::numeric, 0), 0)::text else null end,
+      case when coalesce(l_top_item ->> 'pred7DPay', '') <> '' then '未来7天预测支付=' || round(coalesce((l_top_item ->> 'pred7DPay')::numeric, 0), 0)::text else '未来7天预测支付=0' end
+    ),
+    'sqlPreview', 'rule retrieval + selective llm integration',
+    'rowCount', case when l_top_item = '{}'::jsonb then 0 else 1 end
+  );
+
+  /*
+   * 只有解释类问题才接 LLM
+   */
+  if l_top_item <> '{}'::jsonb and l_question_type in ('promotion', 'reason', 'risk', 'general') then
+    l_should_call_llm := true;
+  end if;
+
+  if l_should_call_llm then
+    l_prompt_payload := json_build_object(
+      'questionType', l_question_type,
+      'question', l_question,
+      'draftAnswer', l_rule_answer,
+      'itemContext', json_build_object(
+        'itemId', coalesce(l_top_item ->> 'itemId', null),
+        'title', coalesce(l_top_item ->> 'title', null),
+        'category', coalesce(l_top_item ->> 'category', null)
+      ),
+      'metrics', json_build_object(
+        'clickCnt', coalesce(l_top_item ->> 'clickCnt', '0'),
+        'payCnt', coalesce(l_top_item ->> 'payCnt', '0'),
+        'payCnt30D', coalesce(l_top_item ->> 'payCnt30D', '0'),
+        'pred7DPay', coalesce(l_top_item ->> 'pred7DPay', '0')
+      ),
+      'highlights', coalesce(l_analysis_meta -> 'highlights', '[]'::jsonb)
+    );
+
+    l_llm_result := "AiModule"."callLlmChatCompletions"(
+      l_system_prompt,
+      '请基于以下检索结果和规则草稿，生成最终商品问答，并仅返回 JSON：' || chr(10) || l_prompt_payload::text,
+      0.2
+    )::jsonb;
+
+    l_final_answer := coalesce(
+      l_llm_result ->> 'content',
+      l_rule_answer
+    );
+  else
+    l_llm_result := jsonb_build_object(
+      'success', false,
+      'message', '当前问题直接返回规则答案'
+    );
+    l_final_answer := l_rule_answer;
+  end if;
+
+  return json_build_object(
+    'success', true,
+    'message', coalesce(l_llm_result ->> 'message', '商品问答生成成功'),
+    'requestUrl', l_llm_result ->> 'requestUrl',
+    'requestPayload', l_llm_result -> 'requestPayload',
+    'rawResponse', l_llm_result,
+    'data', json_build_object(
+      'answer', l_final_answer,
+      'content', l_final_answer,
+      'analysisMeta', l_analysis_meta,
+      'debug', json_build_object(
+        'version', l_version,
+        'questionRaw', l_question_raw,
+        'decodedQuestion', l_question,
+        'itemTitleRaw', l_item_title_raw,
+        'decodedItemTitle', l_item_title,
+        'categoryRaw', l_category_raw,
+        'decodedCategory', l_category,
+        'titleKeyword', l_title_keyword,
+        'questionType', l_question_type,
+        'itemRowsCountDebugAutumn', jsonb_array_length(coalesce(l_item_rows_debug_autumn, '[]'::jsonb)),
+        'itemRowsCountDebugWomen', jsonb_array_length(coalesce(l_item_rows_debug_women, '[]'::jsonb)),
+        'itemRowsCountFinal', jsonb_array_length(coalesce(l_item_rows, '[]'::jsonb)),
+        'bestPayCnt', l_best_pay_cnt,
+        'bestPayCnt30D', l_best_pay_cnt_30d,
+        'bestClickCnt', l_best_click_cnt,
+        'llmCalled', l_should_call_llm
+      ),
+      'suggestedQuestions', json_build_array(
+        '最近卖得最好的商品是哪件？',
+        '近期销量最高的秋装是哪件商品？',
+        '商品 ID 283638 最近30天表现怎么样？',
+        '商品 ID 283638 还值得继续推广吗？',
+        '商品 ID 283638 不值得继续推广的原因是什么？'
+      ),
+      'llmStatus', case
+        when l_should_call_llm and coalesce(l_llm_result ->> 'success', 'false') = 'true' then 'success'
+        when l_top_item <> '{}'::jsonb then 'fallback'
+        when l_question_type in ('top_item', 'metric_lookup') then 'success'
+        else 'limited'
+      end
+    )
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'success', true,
+      'message', '商品问答生成异常，已返回基础分析结果',
+      'errorCode', 'product_qa_proxy_exception',
+      'rawError', SQLERRM,
+      'data', json_build_object(
+        'answer', coalesce(l_rule_answer, '当前暂时无法生成完整回答，请稍后再试。'),
+        'content', coalesce(l_rule_answer, '当前暂时无法生成完整回答，请稍后再试。'),
+        'analysisMeta', coalesce(l_analysis_meta, '{}'::jsonb),
+        'debug', json_build_object(
+          'version', l_version,
+          'questionRaw', l_question_raw,
+          'decodedQuestion', l_question,
+          'itemTitleRaw', l_item_title_raw,
+          'decodedItemTitle', l_item_title,
+          'categoryRaw', l_category_raw,
+          'decodedCategory', l_category,
+          'titleKeyword', l_title_keyword,
+          'questionType', l_question_type,
+          'rawError', SQLERRM
+        ),
+        'suggestedQuestions', json_build_array(
+          '近期销量最高的秋装是哪件商品？',
+          '商品 ID 283638 最近30天表现怎么样？',
+          '商品 ID 283638 不值得继续推广的原因是什么？'
+        ),
+        'llmStatus', 'fallback'
+      )
+    );
+end;

@@ -1,0 +1,305 @@
+create or replace function "AiModule"."generateBusinessReportByAIWithItems"(
+  keyword varchar,
+  item_ids json,
+  anchor_date date,
+  report_type varchar,
+  items json
+) return JSON as
+/**
+ * @Description 优先使用前端传入的商品明细与推荐分生成 AI 商业分析报告，并返回 PDF 下载信息
+ * @Param keyword 标题关键字，非必填
+ * @Param item_ids 商品ID数组，JSON数组格式，非必填
+ * @Param anchor_date 锚定日期，非必填
+ * @Param report_type 报告类型，非必填，如 business / operation / selection
+ * @Param items 前端当前结果集或勾选结果，JSON数组格式，优先使用
+ * @Return JSON
+ */
+declare
+  l_request_url varchar := 'http://fastapi:54903/api/EMDMPAI/generate-report-pdf';
+  l_payload json;
+  l_response jsonb;
+  l_response_data jsonb;
+  l_items json;
+  v_anchor_filter text := '';
+  execute_sql text;
+begin
+  if items is not null and json_typeof(items) = 'array' and json_array_length(items) > 0 then
+    l_items := items;
+
+  elsif item_ids is not null and json_typeof(item_ids) = 'array' and json_array_length(item_ids) > 0 then
+    if anchor_date is not null then
+      v_anchor_filter := format(' where f.anchor_date = %L::date ', anchor_date);
+    end if;
+
+    execute_sql := '
+      with selected_ids as (
+        select value::integer as item_id
+        from json_array_elements_text(' || format('%L::json', item_ids::text) || ')
+      ),
+      latest_feature as (
+        select distinct on (f.item_id)
+          f.item_id,
+          f.anchor_date,
+          f.click_cnt_7d,
+          f.click_uv_7d,
+          f.click_avg_7d,
+          f.click_cnt_30d,
+          f.click_uv_30d,
+          f.pay_cnt_7d,
+          f.pay_cnt_30d,
+          f.pay_per_click_7d,
+          f.click_cnt_delta_7d,
+          f.pay_cnt_delta_7d,
+          f.click_mean_7d,
+          f.click_std_7d,
+          f.item_age_days
+        from "SalesPredictModule".rec_tmall_sales_forecast_feature f
+        ' || v_anchor_filter || '
+        order by f.item_id, f.anchor_date desc
+      ),
+      base as (
+        select
+          b.item_id as "itemId",
+          b.title as "title",
+          b.title_clean as "titleClean",
+          b.category as "category",
+          b.brand_id as "brandId",
+          b.seller_id as "sellerId",
+          coalesce(s.click_cnt, 0) as "clickCnt",
+          coalesce(s.collect_cnt, 0) as "collectCnt",
+          coalesce(s.cart_cnt, 0) as "cartCnt",
+          coalesce(s.pay_cnt, 0) as "payCnt",
+          s.last_action_time as "lastActionTime",
+          lf.anchor_date as "anchorDate",
+          coalesce(lf.click_cnt_7d, 0) as "clickCnt7D",
+          coalesce(lf.click_uv_7d, 0) as "clickUv7D",
+          coalesce(lf.click_avg_7d, 0) as "clickAvg7D",
+          coalesce(lf.click_cnt_30d, 0) as "clickCnt30D",
+          coalesce(lf.click_uv_30d, 0) as "clickUv30D",
+          coalesce(lf.pay_cnt_7d, 0) as "payCnt7D",
+          coalesce(lf.pay_cnt_30d, 0) as "payCnt30D",
+          greatest(coalesce(lf.pay_per_click_7d, 0), 0) as "payPerClick7D",
+          coalesce(lf.click_cnt_delta_7d, 0) as "clickCntDelta7D",
+          coalesce(lf.pay_cnt_delta_7d, 0) as "payCntDelta7D",
+          coalesce(lf.click_mean_7d, 0) as "clickMean7D",
+          coalesce(lf.click_std_7d, 0) as "clickStd7D",
+          coalesce(lf.item_age_days, 0) as "itemAgeDays"
+        from selected_ids ids
+        join "DataImportModule".rec_tmall_item_base b
+          on ids.item_id = b.item_id
+        left join "DataImportModule".rec_tmall_item_sales s
+          on b.item_id = s.item_id
+        left join latest_feature lf
+          on b.item_id = lf.item_id
+      ),
+      transformed as (
+        select
+          base.*,
+          ln(1 + greatest(coalesce(base."payCnt", 0), 0)) as "payCntLog",
+          ln(1 + greatest(coalesce(base."clickCnt", 0), 0)) as "clickCntLog",
+          ln(1 + greatest(coalesce(base."clickCnt7D", 0), 0)) as "clickCnt7DLog",
+          ln(1 + greatest(coalesce(base."clickUv7D", 0), 0)) as "clickUv7DLog",
+          least(greatest(coalesce(base."payPerClick7D", 0), 0) * 100, 20) as "payPerClick7DCapped"
+        from base
+      ),
+      stats as (
+        select
+          min("payCntLog") as "minPayCntLog",
+          max("payCntLog") as "maxPayCntLog",
+          min("clickCntLog") as "minClickCntLog",
+          max("clickCntLog") as "maxClickCntLog",
+          min("clickCnt7DLog") as "minClickCnt7DLog",
+          max("clickCnt7DLog") as "maxClickCnt7DLog",
+          min("clickUv7DLog") as "minClickUv7DLog",
+          max("clickUv7DLog") as "maxClickUv7DLog",
+          min("payPerClick7DCapped") as "minPayPerClick7DCapped",
+          max("payPerClick7DCapped") as "maxPayPerClick7DCapped"
+        from transformed
+      ),
+      scored as (
+        select
+          t.*,
+          round(
+            (
+              (
+                case
+                  when s."maxPayCntLog" > s."minPayCntLog" then
+                    (t."payCntLog" - s."minPayCntLog") * 100.0 / nullif(s."maxPayCntLog" - s."minPayCntLog", 0)
+                  when t."payCntLog" > 0 then 100
+                  else 0
+                end
+              ) * 0.45 +
+              (
+                case
+                  when s."maxClickCntLog" > s."minClickCntLog" then
+                    (t."clickCntLog" - s."minClickCntLog") * 100.0 / nullif(s."maxClickCntLog" - s."minClickCntLog", 0)
+                  when t."clickCntLog" > 0 then 100
+                  else 0
+                end
+              ) * 0.20 +
+              (
+                case
+                  when s."maxClickCnt7DLog" > s."minClickCnt7DLog" then
+                    (t."clickCnt7DLog" - s."minClickCnt7DLog") * 100.0 / nullif(s."maxClickCnt7DLog" - s."minClickCnt7DLog", 0)
+                  when t."clickCnt7DLog" > 0 then 100
+                  else 0
+                end
+              ) * 0.15 +
+              (
+                case
+                  when s."maxClickUv7DLog" > s."minClickUv7DLog" then
+                    (t."clickUv7DLog" - s."minClickUv7DLog") * 100.0 / nullif(s."maxClickUv7DLog" - s."minClickUv7DLog", 0)
+                  when t."clickUv7DLog" > 0 then 100
+                  else 0
+                end
+              ) * 0.10 +
+              (
+                case
+                  when s."maxPayPerClick7DCapped" > s."minPayPerClick7DCapped" then
+                    (t."payPerClick7DCapped" - s."minPayPerClick7DCapped") * 100.0 / nullif(s."maxPayPerClick7DCapped" - s."minPayPerClick7DCapped", 0)
+                  when t."payPerClick7DCapped" > 0 then 100
+                  else 0
+                end
+              ) * 0.10
+            )::numeric,
+            2
+          ) as "recommendationScore"
+        from transformed t
+        cross join stats s
+      ),
+      ranked_levels as (
+        select
+          s.*,
+          row_number() over (
+            order by
+              s."recommendationScore" desc,
+              s."payCnt" desc,
+              s."clickCnt" desc,
+              s."itemId"
+          ) as "rankNo",
+          count(1) over () as "totalCount"
+        from scored s
+      )
+      select
+        coalesce(json_agg(row_to_json(x)), ''[]''::json)
+      from (
+        select
+          r."itemId",
+          r."title",
+          r."titleClean",
+          r."category",
+          r."brandId",
+          r."sellerId",
+          r."clickCnt",
+          r."collectCnt",
+          r."cartCnt",
+          r."payCnt",
+          r."lastActionTime",
+          r."anchorDate",
+          r."clickCnt7D",
+          r."clickUv7D",
+          r."clickAvg7D",
+          r."clickCnt30D",
+          r."clickUv30D",
+          r."payCnt7D",
+          r."payCnt30D",
+          r."payPerClick7D",
+          r."clickCntDelta7D",
+          r."payCntDelta7D",
+          r."clickMean7D",
+          r."clickStd7D",
+          r."itemAgeDays",
+          r."recommendationScore",
+          case
+            when r."recommendationScore" < 20 then ''低推荐''
+            when r."recommendationScore" < 35 then
+              case
+                when r."rankNo" <= greatest(1, ceil(r."totalCount" * 0.70)) then ''中推荐''
+                else ''低推荐''
+              end
+            else
+              case
+                when r."rankNo" <= greatest(1, ceil(r."totalCount" * 0.20)) then ''高推荐''
+                when r."rankNo" <= greatest(1, ceil(r."totalCount" * 0.70)) then ''中推荐''
+                else ''低推荐''
+              end
+          end as "recommendationLevel",
+          ''基于销量、点击、近7日行为和支付转化特征，经对数压缩与归一化后生成的综合推荐分'' as "recommendationReason"
+        from ranked_levels r
+        order by
+          r."recommendationScore" desc,
+          r."payCnt" desc,
+          r."clickCnt" desc,
+          r."itemId"
+      ) x
+    ';
+
+    execute execute_sql into l_items;
+
+  else
+    l_items := coalesce(
+      ("AiModule"."getItemRecommendationCandidates"(keyword, anchor_date, 1, 20)::json) -> 'content',
+      '[]'::json
+    );
+  end if;
+
+  if l_items is null or l_items::text = '[]' then
+    return json_build_object(
+      'success', false,
+      'reportTitle', 'AI商业分析报告',
+      'summary', '没有可用于生成报告的商品数据',
+      'analysisSections', '[]'::json,
+      'recommendations', '[]'::json,
+      'pdfDownloadUrl', null,
+      'llmStatus', 'empty'
+    );
+  end if;
+
+  l_payload := json_build_object(
+    'keyword', trim(coalesce(keyword, '')),
+    'anchorDate', anchor_date,
+    'reportType', coalesce(nullif(trim(report_type), ''), 'business'),
+    'itemIds', coalesce(item_ids, '[]'::json),
+    'items', l_items
+  );
+
+  set http.timeout_msec = 60000;
+
+  select "kesplus_platform"."http".POST(
+    l_request_url,
+    l_payload
+  ) into l_response;
+
+  l_response_data := coalesce(
+    l_response #> '{content,data}',
+    l_response -> 'data',
+    l_response -> 'content',
+    l_response
+  );
+
+  if jsonb_typeof(l_response_data) = 'object' then
+    return l_response_data::json;
+  end if;
+
+  return json_build_object(
+    'success', false,
+    'reportTitle', 'AI商业分析报告',
+    'summary', '大模型报告接口返回结构无法识别',
+    'analysisSections', '[]'::json,
+    'recommendations', '[]'::json,
+    'pdfDownloadUrl', null,
+    'llmStatus', 'fallback'
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'success', false,
+      'reportTitle', 'AI商业分析报告',
+      'summary', '报告生成失败：' || SQLERRM,
+      'analysisSections', '[]'::json,
+      'recommendations', '[]'::json,
+      'pdfDownloadUrl', null,
+      'llmStatus', 'error'
+    );
+end;

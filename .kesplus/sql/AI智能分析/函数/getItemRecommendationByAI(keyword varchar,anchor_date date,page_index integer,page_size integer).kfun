@@ -1,0 +1,105 @@
+create or replace function "AiModule"."getItemRecommendationByAI"(keyword varchar,anchor_date date,page_index integer,page_size integer) return JSON as
+/**
+ * @Description 根据标题关键字查询候选商品，并调用 FastAPI 大模型接口返回 AI 推荐结果
+ * @Param keyword 标题关键字，非必填
+ * @Param anchor_date 锚定日期，非必填
+ * @Param page_index 当前页码，从1开始
+ * @Param page_size 每页条数
+ * @Return JSON
+ */
+declare
+  l_candidates jsonb;
+  l_candidates_content jsonb;
+  l_candidates_total integer;
+  l_payload json;
+  l_response jsonb;
+  l_response_data jsonb;
+  l_request_url varchar := 'http://fastapi:54903/api/EMDMPAI/recommend-items';
+begin
+  l_candidates := "AiModule"."getItemRecommendationCandidates"(
+    keyword,
+    anchor_date,
+    page_index,
+    page_size
+  )::jsonb;
+
+  l_candidates_content := coalesce(l_candidates->'content', '[]'::jsonb);
+  l_candidates_total := coalesce((l_candidates->>'totalElements')::integer, 0);
+
+  if jsonb_array_length(l_candidates_content) = 0 then
+    return json_build_object(
+      'totalElements', 0,
+      'content', '[]'::json,
+      'summary', json_build_object(
+        'matchedItemCount', 0,
+        'llmStatus', 'empty',
+        'message', '未命中任何候选商品'
+      )
+    );
+  end if;
+
+  l_payload := json_build_object(
+    'keyword', trim(coalesce(keyword, '')),
+    'anchorDate', anchor_date,
+    'items', l_candidates_content
+  );
+
+  set http.timeout_msec = 20000;
+
+  select "kesplus_platform"."http".POST(
+    l_request_url,
+    l_payload
+  ) into l_response;
+
+  l_response_data := coalesce(
+    l_response#>'{content,data}',
+    l_response->'data',
+    l_response->'content',
+    l_response
+  );
+
+  if jsonb_typeof(l_response_data) = 'object' and l_response_data ? 'content' then
+    return l_response_data::json;
+  end if;
+
+  if jsonb_typeof(l_response_data) = 'object' and l_response_data ? 'items' then
+    return json_build_object(
+      'totalElements',
+      coalesce(
+        nullif(l_response_data->>'totalElements', '')::integer,
+        jsonb_array_length(coalesce(l_response_data->'items', '[]'::jsonb))
+      ),
+      'content', coalesce(l_response_data->'items', '[]'::jsonb),
+      'summary', coalesce(
+        l_response_data->'summary',
+        jsonb_build_object(
+          'matchedItemCount', l_candidates_total,
+          'llmStatus', 'success'
+        )
+      )
+    );
+  end if;
+
+  return json_build_object(
+    'totalElements', l_candidates_total,
+    'content', l_candidates_content,
+    'summary', json_build_object(
+      'matchedItemCount', l_candidates_total,
+      'llmStatus', 'fallback',
+      'message', '大模型返回结构未命中约定格式，已回退到规则推荐结果'
+    )
+  );
+
+exception
+  when others then
+    return json_build_object(
+      'totalElements', l_candidates_total,
+      'content', l_candidates_content,
+      'summary', json_build_object(
+        'matchedItemCount', l_candidates_total,
+        'llmStatus', 'fallback',
+        'message', '大模型调用失败，已回退到规则推荐结果',
+        'error', SQLERRM
+      )
+    );
+end;

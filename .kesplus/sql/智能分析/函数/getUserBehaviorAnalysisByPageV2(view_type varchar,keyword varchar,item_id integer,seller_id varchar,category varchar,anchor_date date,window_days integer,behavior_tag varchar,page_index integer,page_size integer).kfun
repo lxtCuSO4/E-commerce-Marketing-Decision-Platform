@@ -1,0 +1,302 @@
+create or replace function "AiModule"."getUserBehaviorAnalysisByPageV2"(
+  view_type varchar,
+  keyword varchar,
+  item_id integer,
+  seller_id varchar,
+  category varchar,
+  anchor_date date,
+  window_days integer,
+  behavior_tag varchar,
+  page_index integer,
+  page_size integer
+) return JSON as
+/**
+ * @Description 用户行为分析分页列表V2，支持商品/商家双视角
+ * @Return JSON
+ */
+declare
+  v_result json;
+  v_view_type text := lower(trim(coalesce(view_type, 'item')));
+  v_keyword text;
+  v_keyword_like text;
+  v_seller_id text := trim(coalesce(seller_id, ''));
+  v_category text := trim(coalesce(category, ''));
+  v_behavior_tag text := trim(coalesce(behavior_tag, ''));
+  v_where_sql text := ' where 1=1 ';
+  v_anchor_filter text := '';
+  v_page_index integer := greatest(coalesce(page_index, 1), 1);
+  v_page_size integer := greatest(coalesce(page_size, 10), 1);
+  v_offset integer;
+  execute_sql text;
+begin
+  if v_view_type not in ('item', 'merchant') then
+    v_view_type := 'item';
+  end if;
+
+  if item_id is not null then
+    v_where_sql := v_where_sql || format(' and b.item_id = %s ', item_id);
+  end if;
+
+  if kesplus_platform.utils.str_is_not_empty(v_seller_id) then
+    v_where_sql := v_where_sql || format(
+      ' and (
+          cast(b.seller_id as varchar) = %L
+          or replace(cast(b.seller_id as varchar), ''s'', '''') = replace(%L, ''s'', '''')
+        ) ',
+      v_seller_id, v_seller_id
+    );
+  end if;
+
+  if kesplus_platform.utils.str_is_not_empty(v_category) then
+    v_where_sql := v_where_sql || format(
+      ' and cast(b.category as varchar) = %L ',
+      v_category
+    );
+  end if;
+
+  v_keyword := trim(keyword);
+
+  if kesplus_platform.utils.str_is_not_empty(v_keyword) then
+    v_keyword := replace(v_keyword, '\', '\\');
+    v_keyword := replace(v_keyword, '%', '\%');
+    v_keyword := replace(v_keyword, '_', '\_');
+    v_keyword_like := '%' || v_keyword || '%';
+
+    v_where_sql := v_where_sql || format(
+      ' and (
+          cast(b.item_id as varchar) like %L escape ''\'' or
+          coalesce(b.title, '''') like %L escape ''\'' or
+          coalesce(b.title_clean, '''') like %L escape ''\'' or
+          coalesce(b.title_tokens, '''') like %L escape ''\''
+        )',
+      v_keyword_like, v_keyword_like, v_keyword_like, v_keyword_like
+    );
+  end if;
+
+  if anchor_date is not null then
+    v_anchor_filter := format(' where f.anchor_date = %L::date ', anchor_date);
+  end if;
+
+  v_offset := (v_page_index - 1) * v_page_size;
+
+  execute_sql := '
+    with latest_feature as (
+      select distinct on (f.item_id)
+        f.item_id,
+        f.anchor_date,
+        f.click_cnt_7d,
+        f.click_uv_7d,
+        f.collect_cnt_7d,
+        f.collect_uv_7d,
+        f.cart_cnt_7d,
+        f.cart_uv_7d,
+        f.pay_cnt_7d,
+        f.pay_uv_7d,
+        f.pay_per_click_7d,
+        f.cart_per_click_7d,
+        f.collect_per_click_7d,
+        f.click_cnt_delta_7d,
+        f.pay_cnt_delta_7d,
+        f.cart_cnt_delta_7d
+      from "SalesPredictModule".rec_tmall_sales_forecast_feature f
+      ' || v_anchor_filter || '
+      order by f.item_id, f.anchor_date desc
+    ),
+    base as (
+      select
+        b.item_id as "itemId",
+        coalesce(b.title, '''') as "title",
+        cast(b.category as varchar) as "category",
+        cast(b.seller_id as varchar) as "sellerId",
+        coalesce(s.click_cnt, 0) as "clickCnt",
+        coalesce(s.collect_cnt, 0) as "collectCnt",
+        coalesce(s.cart_cnt, 0) as "cartCnt",
+        coalesce(s.pay_cnt, 0) as "payCnt",
+        coalesce(lf.click_cnt_7d, 0) as "clickCnt7D",
+        coalesce(lf.click_uv_7d, 0) as "clickUv7D",
+        coalesce(lf.collect_cnt_7d, 0) as "collectCnt7D",
+        coalesce(lf.collect_uv_7d, 0) as "collectUv7D",
+        coalesce(lf.cart_cnt_7d, 0) as "cartCnt7D",
+        coalesce(lf.cart_uv_7d, 0) as "cartUv7D",
+        coalesce(lf.pay_cnt_7d, 0) as "payCnt7D",
+        coalesce(lf.pay_uv_7d, 0) as "payUv7D",
+        greatest(coalesce(lf.pay_per_click_7d, 0), 0) as "payPerClick7D",
+        greatest(coalesce(lf.cart_per_click_7d, 0), 0) as "cartPerClick7D",
+        greatest(coalesce(lf.collect_per_click_7d, 0), 0) as "collectPerClick7D",
+        coalesce(lf.click_cnt_delta_7d, 0) as "clickCntDelta7D",
+        coalesce(lf.pay_cnt_delta_7d, 0) as "payCntDelta7D",
+        coalesce(lf.cart_cnt_delta_7d, 0) as "cartCntDelta7D"
+      from "DataImportModule".rec_tmall_item_base b
+      left join "DataImportModule".rec_tmall_item_sales s
+        on b.item_id = s.item_id
+      left join latest_feature lf
+        on b.item_id = lf.item_id
+      ' || v_where_sql || '
+    ),
+    classified_item as (
+      select
+        base.*,
+        round(
+          least(
+            greatest(base."clickCnt7D", 0) * 0.20 +
+            greatest(base."collectCnt7D", 0) * 0.10 +
+            greatest(base."cartCnt7D", 0) * 0.20 +
+            greatest(base."payCnt7D", 0) * 0.25 +
+            greatest(base."cartPerClick7D", 0) * 100 * 0.10 +
+            greatest(base."payPerClick7D", 0) * 100 * 0.15,
+            100
+          )::numeric,
+          2
+        ) as "behaviorScore",
+        case
+          when base."clickCnt7D" >= 50 and base."payPerClick7D" <= 0.01 then ''高点击低支付''
+          when base."cartCnt7D" >= 10 and base."payPerClick7D" <= 0.02 then ''高加购低支付''
+          when base."collectCnt7D" >= 10 and base."cartPerClick7D" <= 0.03 then ''高收藏低加购''
+          when base."clickCntDelta7D" < 0 then ''流量下滑''
+          when base."payCntDelta7D" < 0 then ''转化恶化''
+          when base."payPerClick7D" >= 0.05 then ''稳定转化''
+          when base."clickCnt7D" >= 20 and base."payPerClick7D" > 0.01 and base."payPerClick7D" < 0.05 then ''潜力商品''
+          else ''待观察''
+        end as "primaryTag"
+      from base
+    ),
+    filtered_item as (
+      select *
+      from classified_item
+      where (
+        ' || format('%L', v_behavior_tag) || ' = ''''
+        or "primaryTag" = ' || format('%L', v_behavior_tag) || '
+      )
+    ),
+    merchant_rollup as (
+      select
+        max("sellerId") as "sellerId",
+        count(*) as "itemCount",
+        round(avg("clickCnt7D")::numeric, 2) as "avgClickCnt",
+        round(avg("cartPerClick7D")::numeric, 4) as "avgCartPerClick",
+        round(avg("payPerClick7D")::numeric, 4) as "avgPayPerClick",
+        sum(case when "primaryTag" in (''高点击低支付'', ''高加购低支付'', ''高收藏低加购'', ''流量下滑'', ''转化恶化'') then 1 else 0 end) as "highRiskCount",
+        sum(case when "primaryTag" = ''潜力商品'' then 1 else 0 end) as "highPotentialCount",
+        sum("clickCnt7D") as "clickCnt",
+        sum("collectCnt7D") as "collectCnt",
+        sum("cartCnt7D") as "cartCnt",
+        sum("payCnt7D") as "payCnt",
+        round(avg("behaviorScore")::numeric, 2) as "behaviorScore",
+        case
+          when sum(case when "primaryTag" in (''高点击低支付'', ''高加购低支付'', ''高收藏低加购'', ''流量下滑'', ''转化恶化'') then 1 else 0 end) >= 3 then ''高风险商家''
+          when sum(case when "primaryTag" = ''潜力商品'' then 1 else 0 end) >= 2 then ''重点关注''
+          when round(avg("payPerClick7D")::numeric, 4) >= 0.05 then ''健康''
+          else ''待观察''
+        end as "behaviorLevel",
+        case
+          when sum(case when "primaryTag" in (''高点击低支付'', ''高加购低支付'', ''高收藏低加购'') then 1 else 0 end) > 0
+            and sum(case when "primaryTag" = ''潜力商品'' then 1 else 0 end) > 0 then ''高风险商品聚集,潜力商品池''
+          when sum(case when "primaryTag" in (''高点击低支付'', ''高加购低支付'', ''高收藏低加购'') then 1 else 0 end) > 0 then ''高风险商品聚集''
+          when sum(case when "primaryTag" = ''潜力商品'' then 1 else 0 end) > 0 then ''潜力商品池''
+          when round(avg("payPerClick7D")::numeric, 4) >= 0.05 then ''稳定转化''
+          else ''待观察''
+        end as "behaviorTagsText"
+      from filtered_item
+      group by "sellerId"
+    ),
+    final_dataset as (
+      select
+        ''item'' as "viewType",
+        "itemId",
+        "sellerId",
+        "title",
+        "category",
+        null::integer as "itemCount",
+        "clickCnt7D" as "avgClickCnt",
+        round("cartPerClick7D"::numeric, 4) as "avgCartPerClick",
+        round("payPerClick7D"::numeric, 4) as "avgPayPerClick",
+        case when "primaryTag" in (''高点击低支付'', ''高加购低支付'', ''高收藏低加购'', ''流量下滑'', ''转化恶化'') then 1 else 0 end as "highRiskCount",
+        case when "primaryTag" = ''潜力商品'' then 1 else 0 end as "highPotentialCount",
+        "clickCnt7D" as "clickCnt",
+        "collectCnt7D" as "collectCnt",
+        "cartCnt7D" as "cartCnt",
+        "payCnt7D" as "payCnt",
+        "behaviorScore",
+        case
+          when "primaryTag" in (''高点击低支付'', ''高加购低支付'', ''高收藏低加购'', ''流量下滑'', ''转化恶化'') then ''高风险''
+          when "primaryTag" = ''潜力商品'' then ''高潜力''
+          when "primaryTag" = ''稳定转化'' then ''稳定转化''
+          else ''待观察''
+        end as "behaviorLevel",
+        to_json(array["primaryTag"])::json as "behaviorTags"
+      from filtered_item
+      where ' || format('%L', v_view_type) || ' = ''item''
+
+      union all
+
+      select
+        ''merchant'' as "viewType",
+        null::integer as "itemId",
+        "sellerId",
+        "sellerId" as "title",
+        ''商家'' as "category",
+        "itemCount",
+        "avgClickCnt",
+        "avgCartPerClick",
+        "avgPayPerClick",
+        "highRiskCount",
+        "highPotentialCount",
+        "clickCnt",
+        "collectCnt",
+        "cartCnt",
+        "payCnt",
+        "behaviorScore",
+        "behaviorLevel",
+        case
+          when coalesce("behaviorTagsText", '''') = '''' then ''[]''::json
+          else to_json(string_to_array("behaviorTagsText", '',''))::json
+        end as "behaviorTags"
+      from merchant_rollup
+      where ' || format('%L', v_view_type) || ' = ''merchant''
+        and (
+          ' || format('%L', v_behavior_tag) || ' = ''''
+          or "behaviorTagsText" like ''%'' || ' || format('%L', v_behavior_tag) || ' || ''%''
+          or "behaviorLevel" = ' || format('%L', v_behavior_tag) || '
+        )
+    )
+    select
+      count(*) as "totalElements",
+      coalesce(
+        (
+          select json_agg(row_to_json(x))
+          from (
+            select
+              "viewType",
+              "itemId",
+              "sellerId",
+              "title",
+              "category",
+              "itemCount",
+              "avgClickCnt",
+              "avgCartPerClick",
+              "avgPayPerClick",
+              "highRiskCount",
+              "highPotentialCount",
+              "clickCnt",
+              "collectCnt",
+              "cartCnt",
+              "payCnt",
+              "behaviorScore",
+              "behaviorLevel",
+              "behaviorTags"
+            from final_dataset
+            order by "behaviorScore" desc, "payCnt" desc, "clickCnt" desc, coalesce("itemId", 0), "sellerId"
+            limit ' || v_page_size || '
+            offset ' || v_offset || '
+          ) x
+        ),
+        ''[]''::json
+      ) as "content"
+    from final_dataset
+  ';
+
+  execute kesplus_platform.json.object_sql(execute_sql)
+    into v_result;
+
+  return v_result;
+end;

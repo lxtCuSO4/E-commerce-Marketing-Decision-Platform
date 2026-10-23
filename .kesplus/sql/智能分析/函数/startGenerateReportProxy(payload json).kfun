@@ -1,0 +1,31 @@
+CREATE OR REPLACE FUNCTION "AiModule"."startGenerateReportProxy"(payload json) RETURN JSON AS
+/**
+ * @Description 启动报告生成任务（伪异步兼容，实际同步生成）
+ * @Param payload JSON
+ * @Return JSON
+ */
+declare
+  l_task_id varchar := to_char(clock_timestamp(), 'YYYYMMDDHH24MISSMS');
+  l_result jsonb;
+begin
+  if payload is null then
+    return json_build_object(
+      'success', false,
+      'errorCode', 'invalid_payload',
+      'message', 'payload 不能为空'
+    );
+  end if;
+
+  l_result := "AiModule"."generateReportPreviewProxy"(payload)::jsonb;
+
+  return json_build_object(
+    'success', coalesce((l_result ->> 'success')::boolean, false),
+    'message', coalesce(l_result ->> 'message', '报告任务已启动'),
+    'enhancementTaskId', l_task_id,
+    'enhancementStatus', 'completed',
+    'requestUrl', l_result ->> 'requestUrl',
+    'requestPayload', l_result -> 'requestPayload',
+    'rawResponse', l_result,
+    'data', l_result -> 'data'
+  );
+end;

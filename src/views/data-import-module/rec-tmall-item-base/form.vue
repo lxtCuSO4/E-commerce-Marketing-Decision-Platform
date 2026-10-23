@@ -109,6 +109,18 @@ function handleBack() {
 defineExpose({ submit, reset, closeDialog })
 </script>
 <style lang="scss" scoped>
+:deep(.emdmp-form-page) {
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.9)),
+		radial-gradient(circle at top left, rgba(245, 158, 11, 0.12), transparent 26%);
+}
+
+:deep(.emdmp-form-footer) {
+	position: sticky;
+	bottom: 16px;
+	z-index: 4;
+}
+
 :deep(.k-design-block) {
 	--page-block-corner: var(--emdmp-panel-radius);
 }
@@ -117,6 +129,11 @@ defineExpose({ submit, reset, closeDialog })
 }
 :deep(.k-design-text-h6) {
 	font-weight: 700;
+	color: #122033;
+}
+
+:deep(.el-form-item__label) {
+	color: #63748c;
 }
 /**
 :deep(.el-form-item__label) {

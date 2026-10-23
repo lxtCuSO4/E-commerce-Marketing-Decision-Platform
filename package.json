@@ -64,7 +64,7 @@
     "build": "kesplus build",
     "analyze": "set ANALYZE=1 &&  kesplus build",
     "dev": "kesplus dev",
-    "test": "kesplus test",
+    "test": "node scripts/run-tests.mjs",
     "generate": "kesplus generate",
     "design": "kesplus design"
   }
