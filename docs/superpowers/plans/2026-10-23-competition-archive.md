@@ -16,9 +16,9 @@
 - [x] Rewrite README and backend setup docs; record archive contents, restoration prerequisites and verification limits.
 - [x] Run existing Node tests, frontend build, Python tests for both API sources, and actual model inference.
 - [x] Review staged contents for credentials, binary sizes, missing files and unrelated changes.
-- [ ] Commit and fast-forward the remote default branch without overwriting remote changes.
-- [ ] Clone from GitHub, download models.zip, compare tracked contents and ZIP/model hashes, rerun portable checks.
-- [ ] Record verified remote revision and cleanup intent in the repository.
+- [x] Commit and fast-forward the remote default branch without overwriting remote changes.
+- [x] Clone from GitHub, download models.zip, compare tracked contents and ZIP/model hashes, rerun portable checks.
+- [x] Record verified remote revision and cleanup intent in the repository.
 - [ ] Check exact deletion path, links and processes; remove only the authorized project directory and verify absence.
 
 ## User decision
