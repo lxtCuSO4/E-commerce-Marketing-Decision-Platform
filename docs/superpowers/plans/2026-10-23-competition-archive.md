@@ -4,20 +4,20 @@
 
 **Goal:** Preserve the completed competition project on GitHub, document restoration, then remove the local project without a local backup as requested.
 
-**Architecture:** Keep the existing frontend, FastAPI, model bundle and Kesplus SQL intact. Store model binaries with Git LFS. Exclude credentials and reproducible runtime output. Preserve unique competition and deployment materials outside temporary directories.
+**Architecture:** Keep the existing frontend, FastAPI, model bundle and Kesplus SQL intact. Store the user-supplied models.zip through Git LFS as the sole current model artifact. Exclude credentials and reproducible runtime output. Preserve unique competition and deployment materials outside temporary directories.
 
-**Tech Stack:** Vue 3, Kesplus 3.2, FastAPI, Kingbase, LightGBM, Git LFS.
+**Tech Stack:** Vue 3, Kesplus 3.2, FastAPI, Kingbase, LightGBM, Git.
 
 ## Tasks
 
 - [x] Inspect git status, remote, existing docs, API loading, model hashes and local-only files.
-- [x] Add ignore rules and Git LFS attributes; remove embedded SQL credentials before staging.
+- [x] Add ignore rules and LFS ZIP attributes; remove embedded SQL credentials before staging.
 - [x] Preserve only the minimal hosted-model example; omit competition slides and temporary extracted materials per user instruction.
 - [x] Rewrite README and backend setup docs; record archive contents, restoration prerequisites and verification limits.
 - [x] Run existing Node tests, frontend build, Python tests for both API sources, and actual model inference.
 - [x] Review staged contents for credentials, binary sizes, missing files and unrelated changes.
 - [ ] Commit and fast-forward the remote default branch without overwriting remote changes.
-- [ ] Clone from GitHub, download LFS objects, compare tracked file hashes and model hashes, rerun portable checks.
+- [ ] Clone from GitHub, download models.zip, compare tracked contents and ZIP/model hashes, rerun portable checks.
 - [ ] Record verified remote revision and cleanup intent in the repository.
 - [ ] Check exact deletion path, links and processes; remove only the authorized project directory and verify absence.
 

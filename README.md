@@ -32,7 +32,7 @@ Vue / Kesplus 页面
 
 ## 1. 获取源码和模型
 
-模型通过 Git LFS 保存。仅下载 GitHub 源码 ZIP 时，模型可能只是指针文件。
+模型以仓库根目录的 `models.zip` 保存，通过 Git LFS 传输。此文件原样来自用户提供的压缩包（77,677,505 字节）。
 
 ```powershell
 git lfs install
@@ -40,15 +40,37 @@ git clone -c core.longpaths=true https://github.com/lxtCuSO4/E-commerce-Marketin
 cd E-commerce-Marketing-Decision-Platform
 git lfs pull
 git lfs fsck
+Get-FileHash .\models.zip -Algorithm SHA256
 ```
 
-模型大小 256,735,957 字节，SHA-256：
+仅下载 GitHub 源码 ZIP 时，`models.zip` 可能是 LFS 指针；请通过上述步骤获取完整压缩包后再解压。
+
+ZIP 的 SHA-256：
+
+```text
+bf3dbde2a3d6fbd5e484ec980e1edb9ab90d70ed4b56914daba1038cb9e0edc7
+```
+
+压缩包包含独立的销量预测托管接口及 LightGBM 模型；它的 API 清单只有销量预测。可解压到独立目录后按 Kesplus 平台要求导入 `models/EMDMP`。**不要将 ZIP 直接解压覆盖本仓库根目录，否则会覆盖完整 AI 模块的接口清单和预测适配器。**
+
+恢复完整项目的模型文件时，仅复制模型二进制：
+
+```powershell
+Expand-Archive -LiteralPath .\models.zip -DestinationPath .\.model-package
+$archiveModel = '.\.model-package\models\EMDMP\models\sales_forecast_lightgbm.pkl'
+Copy-Item -LiteralPath $archiveModel -Destination .\models\EMDMP\models\sales_forecast_lightgbm.pkl
+Copy-Item -LiteralPath $archiveModel -Destination .\fastapi\apps\EMDMPAI\models\sales_forecast_lightgbm.pkl
+Copy-Item -LiteralPath $archiveModel -Destination .\examples\EMDMPForecastMini\models\EMDMPForecastMini\models\sales_forecast_lightgbm.pkl
+Get-FileHash -LiteralPath $archiveModel -Algorithm SHA256
+```
+
+解压后的模型大小 256,735,957 字节，SHA-256：
 
 ```text
 4ce13c5a91ef81029f1833e9b91b2efaa9f2a9555fed90817869602994acd55f
 ```
 
-主模型、回退模型与最小示例的模型相同，LFS 按内容去重。清单见 [docs/model-artifacts.json](docs/model-artifacts.json)。
+单独的 `.pkl` 文件不再纳入版本控制。校验清单见 [docs/model-artifacts.json](docs/model-artifacts.json)。
 
 ## 2. 恢复业务服务和数据库
 

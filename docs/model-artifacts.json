@@ -1,10 +1,14 @@
 {
-  "storage": "git-lfs",
+  "storage": "git-lfs-zip",
   "sha256": "4ce13c5a91ef81029f1833e9b91b2efaa9f2a9555fed90817869602994acd55f",
   "sizeBytes": 256735957,
   "paths": [
     "models/EMDMP/models/sales_forecast_lightgbm.pkl",
     "fastapi/apps/EMDMPAI/models/sales_forecast_lightgbm.pkl",
     "examples/EMDMPForecastMini/models/EMDMPForecastMini/models/sales_forecast_lightgbm.pkl"
-  ]
+  ],
+  "archivePath": "models.zip",
+  "archiveSha256": "bf3dbde2a3d6fbd5e484ec980e1edb9ab90d70ed4b56914daba1038cb9e0edc7",
+  "archiveSizeBytes": 77677505,
+  "modelEntry": "models/EMDMP/models/sales_forecast_lightgbm.pkl"
 }

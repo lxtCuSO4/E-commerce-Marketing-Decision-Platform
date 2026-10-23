@@ -9,7 +9,7 @@
 | 已跟踪历史、前端页面、工具与测试 | 保留原历史并提交当前成果 |
 | FastAPI、测试与依赖 | 保留网关和两套运行实现，补充依赖快照 |
 | `.kesplus` 表结构、SQL 与 REST 定义 | 保留已有定义；部分 AI REST 注册缺失，须按 KESPLUS_ROUTES.md 手动重建 |
-| LightGBM 模型和特征配置 | 三个位置的模型经 Git LFS 保存，哈希见 `model-artifacts.json` |
+| LightGBM 模型和特征配置 | 经 Git LFS 原样保存用户提供的 `models.zip`，恢复时提取模型；哈希见 `model-artifacts.json` |
 | 临时目录中独有的最小部署适配器 | 整理到 `examples/EMDMPForecastMini` |
 | README、页面说明、模型说明与历史设计 | 更新当前说明，保留技术历史 |
 
@@ -25,6 +25,8 @@
 - `.archive-work`：本次归档的验证日志与临时远端验证副本，清理时一并移除。
 
 SQL `callLlmChatCompletions` 中发现的真实 API 密钥已替换为部署占位符。FastAPI 环境模板不含真实凭据。数据库直连模型与 FastAPI 的凭据配置互相独立。
+
+ZIP 原始大小 77,677,505 字节，SHA-256 为 `bf3dbde2a3d6fbd5e484ec980e1edb9ab90d70ed4b56914daba1038cb9e0edc7`。其中的模型与原项目一致。完整项目保留自身 API 源码，ZIP 中仅含独立销量预测接口，恢复时不得覆盖完整接口目录。
 
 ## 本次必要修正
 
@@ -47,6 +49,8 @@ SQL `callLlmChatCompletions` 中发现的真实 API 密钥已替换为部署占�
 | Python 源码编译检查 | 通过 |
 | 真实 LightGBM 模型加载与预测 | 七天输出均为有限非负数 |
 | 三份模型 SHA-256 | 一致，256,735,957 字节 |
+| 用户 ZIP 的独立路由与平台 Model 适配器 | 加载、初始化、七天预测和 HTTP 路由均通过 |
+| ZIP CRC、目录结构与敏感配置检查 | 通过 |
 
 固定来源测试不包含 4 项加载器测试：加载器测试专门验证默认 auto 的选择规则，已在完整套件中运行。
 
@@ -62,6 +66,6 @@ SQL `callLlmChatCompletions` 中发现的真实 API 密钥已替换为部署占�
 
 ## 远端核验与清理约定
 
-推送后必须从 GitHub 重新克隆，下载 Git LFS 模型，检查提交、树对象、工作区状态和模型哈希，并执行可移植的前端测试。核验成功的记录会追加在本文。
+推送后必须从 GitHub 重新克隆并下载 LFS ZIP，检查提交、树对象、工作区状态、ZIP 哈希和内部模型哈希，按文档恢复二进制，并执行可移植的前端测试。核验成功的记录会追加在本文。ZIP 中的独立 API 包还需执行加载和实际预测验证。
 
 用户已明确要求不留本地备份。只有完成远端核验后才删除 `D:\kesplusProject\EMDMP`。此操作只针对项目目录，不包含外部 Kesplus 安装、Kingbase 数据库、其他项目或云端资源。实际删除结果在会话中汇报，本文不预先声称删除完成。

@@ -36,3 +36,5 @@ __pycache__/
 /kes plus/
 /.archive-work/
 /docs/competition/
+*.pkl
+/.model-package/

@@ -50,7 +50,7 @@
 ## 文件和运行限制
 
 - PDF：项目根目录 `report_generated`，URL `/files/<filename>.pdf`，运行时自动创建。
-- 部署模型：`models/EMDMP/models`；回退模型：`fastapi/apps/EMDMPAI/models`。先在根目录执行 `git lfs pull` 与 `git lfs fsck`。
+- 部署模型：`models/EMDMP/models`；回退模型：`fastapi/apps/EMDMPAI/models`。先按根目录 README 从 `models.zip` 提取并复制模型二进制，避免覆盖完整 AI 接口目录。
 - 两套 API 有部署适配差异，不能按逐字一致的镜像覆盖。
 - 异步任务存于进程内存，重启后不保留。
 
